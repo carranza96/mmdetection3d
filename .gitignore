@@ -132,3 +132,5 @@ data/sunrgbd/OFFICIAL_SUNRGBD/
 
 # Waymo evaluation
 mmdet3d/core/evaluation/waymo_utils/compute_detection_metrics_main
+results/
+RenderOption_2021-09-21-11-13-29.json

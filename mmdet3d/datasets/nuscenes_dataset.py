@@ -535,7 +535,7 @@ class NuScenesDataset(Custom3DDataset):
         ]
         return Compose(pipeline)
 
-    def show(self, results, out_dir, show=True, pipeline=None):
+    def show(self, results, out_dir, show=True, pipeline=None, score_th=0.1):
         """Results visualization.
 
         Args:
@@ -548,6 +548,8 @@ class NuScenesDataset(Custom3DDataset):
         assert out_dir is not None, 'Expect out_dir, got none.'
         pipeline = self._get_pipeline(pipeline)
         for i, result in enumerate(results):
+            if i==0:
+                continue
             if 'pts_bbox' in result.keys():
                 result = result['pts_bbox']
             data_info = self.data_infos[i]
@@ -557,8 +559,9 @@ class NuScenesDataset(Custom3DDataset):
             # for now we convert points into depth mode
             points = Coord3DMode.convert_point(points, Coord3DMode.LIDAR,
                                                Coord3DMode.DEPTH)
-            inds = result['scores_3d'] > 0.1
+            inds = result['scores_3d'] > score_th
             gt_bboxes = self.get_ann_info(i)['gt_bboxes_3d'].tensor.numpy()
+            gt_names = self.get_ann_info(i)['gt_names']
             show_gt_bboxes = Box3DMode.convert(gt_bboxes, Box3DMode.LIDAR,
                                                Box3DMode.DEPTH)
             pred_bboxes = result['boxes_3d'][inds].tensor.numpy()
