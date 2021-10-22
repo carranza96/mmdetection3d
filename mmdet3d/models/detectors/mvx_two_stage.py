@@ -14,6 +14,7 @@ from mmdet.core import multi_apply
 from mmdet.models import DETECTORS
 from .. import builder
 from .base import Base3DDetector
+from mmdet3d.models.model_utils import ConvLSTM
 
 
 @DETECTORS.register_module()
@@ -35,7 +36,8 @@ class MVXTwoStageDetector(Base3DDetector):
                  train_cfg=None,
                  test_cfg=None,
                  pretrained=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 convlstm_module=False):
         super(MVXTwoStageDetector, self).__init__(init_cfg=init_cfg)
 
         if pts_voxel_layer:
@@ -101,6 +103,19 @@ class MVXTwoStageDetector(Base3DDetector):
                     key, please consider using init_cfg')
                 self.pts_backbone.init_cfg = dict(
                     type='Pretrained', checkpoint=pts_pretrained)
+
+        self.convlstm_module = convlstm_module
+        if self.convlstm_module:
+            self.convlstm = ConvLSTM(
+                input_size = (128, 128),
+                input_dim = 384,
+                hidden_dim = [384],
+                kernel_size = (1, 1),
+                num_layers = 1,
+                batch_first = True,
+                bias = False,
+                return_all_layers = False
+            ).cuda()
 
     @property
     def with_img_shared_head(self):
@@ -270,8 +285,13 @@ class MVXTwoStageDetector(Base3DDetector):
         Returns:
             dict: Losses of different branches.
         """
-        img_feats, pts_feats = self.extract_feat(
-            points, img=img, img_metas=img_metas)
+        if not self.convlstm_module:
+            img_feats, pts_feats = self.extract_feat(
+                points, img=img, img_metas=img_metas)
+        else:
+            img_feats, pts_feats = self.extract_feat_convlstm(
+                points, img=img, img_metas=img_metas)
+
         losses = dict()
         if pts_feats:
             losses_pts = self.forward_pts_train(pts_feats, gt_bboxes_3d,
@@ -399,10 +419,56 @@ class MVXTwoStageDetector(Base3DDetector):
         ]
         return bbox_results
 
+    
+    def extract_feat_convlstm(self, points, img, img_metas):
+        
+        pcs0, pcs1, pcs2 = [], [], []
+        # Chunk sweeps in three groups for each sample within the batch
+        for res in points:
+            ts = res[:,-1].unique()
+
+            if len(ts)==1:  # If there are no previous sweeps, the three timesteps are the current point cloud
+                pcs0.append(res)
+                pcs1.append(res)
+                pcs2.append(res)
+            
+            else:
+                ts_pc0, ts_pc1, ts_pc2 = ts[-4:], ts[-7:-4], ts[:-7]
+                pc0_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc0])
+                pc1_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc1])
+                pc2_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc2])
+
+                pc0, pc1, pc2 = res[pc0_ind],  res[pc1_ind],  res[pc2_ind]
+
+                pcs0.append(pc0)
+                pcs1.append(pc1)
+                pcs2.append(pc2)
+
+        img_feats0, pts_feats0 = self.extract_feat(
+                pcs0, img=img, img_metas=img_metas)
+
+        img_feats1, pts_feats1 = self.extract_feat(
+                pcs1, img=img, img_metas=img_metas)
+            
+        img_feats2, pts_feats2 = self.extract_feat(
+                pcs2, img=img, img_metas=img_metas)
+
+        # Create 5-D Tensor (b, t, c, h, w)
+        rnn_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
+        pts_feats = [self.convlstm(rnn_input)[-1]]
+        img_feats = None
+
+        return img_feats, pts_feats
+
     def simple_test(self, points, img_metas, img=None, rescale=False):
         """Test function without augmentaiton."""
-        img_feats, pts_feats = self.extract_feat(
-            points, img=img, img_metas=img_metas)
+        if not self.convlstm_module:
+            img_feats, pts_feats = self.extract_feat(
+                points, img=img, img_metas=img_metas)
+        else:
+            img_feats, pts_feats = self.extract_feat_convlstm(
+                points, img=img, img_metas=img_metas)
+
 
         bbox_list = [dict() for i in range(len(img_metas))]
         if pts_feats and self.with_pts_bbox:
