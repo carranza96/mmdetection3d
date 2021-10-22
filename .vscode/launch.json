@@ -1,0 +1,131 @@
+{
+    // Use IntelliSense para saber los atributos posibles.
+    // Mantenga el puntero para ver las descripciones de los existentes atributos.
+    // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+    
+        {
+            "name": "Python: Archivo actual",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "PCD Demo",
+            "type": "python",
+            "request": "launch",
+            "program": "demo/pcd_demo.py",
+            "console": "integratedTerminal",
+            "args": [
+                "demo/data/kitti/kitti_000008.bin",
+                "configs/second/hv_second_secfpn_6x8_80e_kitti-3d-car.py",
+                "checkpoints/hv_second_secfpn_6x8_80e_kitti-3d-car_20200620_230238-393f000c.pth",
+                "--show"
+            ]
+        },
+        {
+            "name": "Browse KITTI dataset 3D",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/misc/browse_dataset.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/_base_/datasets/kitti-3d-3class.py",
+                "--task=det",
+                "--output-dir=results/",
+                "--online",
+            ]
+        },
+        {
+            "name": "Browse KITTI dataset Multi-modality",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/misc/browse_dataset.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/mvxnet/dv_mvx-fpn_second_secfpn_adamw_2x8_80e_kitti-3d-3class.py",
+                "--task=multi_modality-det",
+                "--output-dir=results/browse_dataset",
+                "--online",
+            ]
+        },
+        {
+            "name": "Kitti object vis",
+            "type": "python",
+            "request": "launch",
+            "program": "kitti_object_vis/kitti_object.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--dir=data/kitti",
+                "--show_lidar_with_depth", // 3D point-cloud view
+                // "--show_lidar_topview_with_boxes", // Top-view image
+                // "--show_lidar_on_image",  // Lidar-to-camera projections
+                "--show_image_with_boxes",
+                "--img_fov", // Front view mapping
+                "--const_box", // Constraint box
+                "--vis",
+                "--pred",
+                "--preddir=/home/manuelc/mmdetection3d/results/kitti/pointpillars/kitti_val_submission",
+                // "--depth", // Not present in this dataset
+                // "--stat",
+                "--ind=1"
+            ]
+        },
+        {
+            "name": "Visualize results CenterPoint Voxel",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/misc/visualize_results_nuscenes.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/_base_/datasets/nus-3d.py",
+                "--result=results/nuscenes/centerpoint/voxel/result.pkl", 
+                "--show-dir=results/nuscenes/centerpoint/voxel/show_results",
+                "--score-th=0.3"
+            ]
+        },
+        {
+            "name": "Visualize results CenterPoint Pillar",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/misc/visualize_results_nuscenes.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/_base_/datasets/nus-3d.py",
+                "--result=results/nuscenes/centerpoint/pillar/result.pkl", 
+                "--show-dir=results/nuscenes/centerpoint/pillar/show_results",
+                "--score-th=0.1"
+            ]
+        },
+
+        {
+            "name": "Predict CenterPoint Pillar ND",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/centerpoint/centerpoint_02pillar_nd_second_secfpn_4x8_cyclic_20e_nus.py",
+                "results/nuscenes/centerpoint/nd_pillar_no_cbgs/latest.pth", 
+                "--out=results/nuscenes/centerpoint/nd_pillar_no_cbgs/result_sample.pkl",
+            ]
+        },
+
+        {
+            "name": "Train CenterPoint Pillar ND",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/centerpoint/centerpoint_02pillar_nd_second_secfpn_4x8_cyclic_20e_nus.py",
+                "--work-dir=results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs",
+            ]
+        },
+
+
+    ]
+}
