@@ -113,16 +113,28 @@
                 "--out=results/nuscenes/centerpoint/nd_pillar_no_cbgs/result_sample.pkl",
             ]
         },
+        {
+            "name": "Predict CenterPoint Pillar ND ConvLSTM",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/test.py",
+            "console": "integratedTerminal",
+            "args": [
+                "configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py",
+                "results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs/latest.pth", 
+                "--out=results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs/result_sample.pkl",
+            ]
+        },
 
         {
-            "name": "Train CenterPoint Pillar ND",
+            "name": "Train CenterPoint Pillar ND ConvLSTM",
             "type": "python",
             "request": "launch",
             "program": "tools/train.py",
             "console": "integratedTerminal",
             "args": [
-                "configs/centerpoint/centerpoint_02pillar_nd_second_secfpn_4x8_cyclic_20e_nus.py",
-                "--work-dir=results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs",
+                "configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py",
+                "--work-dir=results/nuscenes/centerpoint/prueba",
             ]
         },
 

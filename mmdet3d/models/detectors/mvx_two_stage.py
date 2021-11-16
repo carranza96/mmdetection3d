@@ -14,8 +14,7 @@ from mmdet.core import multi_apply
 from mmdet.models import DETECTORS
 from .. import builder
 from .base import Base3DDetector
-from mmdet3d.models.model_utils import ConvLSTM
-
+from mmdet3d.models.model_utils import ConvLSTM, AxialTempTransformer
 
 @DETECTORS.register_module()
 class MVXTwoStageDetector(Base3DDetector):
@@ -106,16 +105,65 @@ class MVXTwoStageDetector(Base3DDetector):
 
         self.convlstm_module = convlstm_module
         if self.convlstm_module:
-            self.convlstm = ConvLSTM(
-                input_size = (128, 128),
-                input_dim = 384,
-                hidden_dim = [384],
-                kernel_size = (1, 1),
-                num_layers = 1,
-                batch_first = True,
-                bias = False,
-                return_all_layers = False
-            ).cuda()
+            # self.convlstm = ConvLSTM(
+            #     input_size = (128, 128),
+            #     input_dim = 384,
+            #     hidden_dim = [384],
+            #     kernel_size = (1, 1),
+            #     num_layers = 1,
+            #     batch_first = True,
+            #     bias = False,
+            #     return_all_layers = False
+            # ).cuda()
+
+            # Attention before ConvLSTM
+            # self.pos_emb = AxialPositionalEmbedding(
+            # dim = 384,
+            # shape = (3, 128, 128),
+            # emb_dim_index=2
+            # ).cuda()
+            # self.attn = AxialAttention(
+            #     dim = 384,           # embedding dimension
+            #     dim_index = 2,       # where is the embedding dimension
+            #     heads = 8,           # number of heads for multi-head attention
+            #     num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
+            # )
+
+            #Attention after ConvLSTM
+            # self.pos_emb = AxialPositionalEmbedding(
+            # dim = 384,
+            # shape = (128, 128),
+            # emb_dim_index=1
+            # ).cuda()
+
+            # self.attn = AxialAttention(
+            #     dim = 384,           # embedding dimension
+            #     dim_index = 2,       # where is the embedding dimension
+            #     heads = 8,           # number of heads for multi-head attention
+            #     num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
+            # )
+            # self.attn2 = AxialAttention(
+            #     dim = 384,           # embedding dimension
+            #     dim_index = 2,       # where is the embedding dimension
+            #     heads = 8,           # number of heads for multi-head attention
+            #     num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
+            # )
+            # self.attn3 = AxialAttention(
+            #     dim = 384,           # embedding dimension
+            #     dim_index = 2,       # where is the embedding dimension
+            #     heads = 8,           # number of heads for multi-head attention
+            #     num_dimensions = 3,  # number of axial dimensions (images is 2, video is 3, or more)
+            # )
+
+            self.attn = AxialTempTransformer(
+                dim = 384,
+                num_dimensions = 3,
+                dim_index = 2,
+                depth = 1,
+                heads = 8,
+                axial_pos_emb_shape = (3, 128, 128),
+                reversible = False,
+            )
 
     @property
     def with_img_shared_head(self):
@@ -455,8 +503,28 @@ class MVXTwoStageDetector(Base3DDetector):
 
         # Create 5-D Tensor (b, t, c, h, w)
         rnn_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
-        pts_feats = [self.convlstm(rnn_input)[-1]]
+        # Attention before ConvLSTM
+        # rnn_input = self.pos_emb(rnn_input)
+        # pts_feats = self.attn(rnn_input)
+        # pts_feats = self.attn2(pts_feats)
+        # pts_feats = [self.attn3(pts_feats)[:,-1]]
+        pts_feats = [self.attn(rnn_input)[:, -1]]
+
+        # pts_feats = [self.convlstm(rnn_input)[-1]]
+
+        # Attention after ConvLSTM
+        # pts_feats = self.pos_emb(pts_feats[0])
+        # pts_feats = self.attn(pts_feats[0])
+        # pts_feats = [self.attn2(pts_feats)]
+
+
+
+
         img_feats = None
+        # matt = torch.nn.MultiheadAttention(embed_dim=384, num_heads=6, kdim=int(384/6), batch_first=True).cuda()
+        # tf.keras.layers.MultiHeadAttention(num_heads=6, key_dim=int(math.trunc(32/6)), attention_axes=(1, 2, 3))(net59, net59, net59, None)
+
+
 
         return img_feats, pts_feats
 

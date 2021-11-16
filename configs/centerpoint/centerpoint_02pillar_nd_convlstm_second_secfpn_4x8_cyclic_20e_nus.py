@@ -153,7 +153,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=4,
     # train=dict(
     #     type='CBGSDataset',
     #     dataset=dict(
@@ -184,4 +184,6 @@ data = dict(
         classes=class_names)
     )
 
-evaluation = dict(interval=5, pipeline=eval_pipeline)
+evaluation = dict(interval=1, pipeline=eval_pipeline)
+# resume_from = 'results/nuscenes/centerpoint/nd_pillar_attn_no_cbgs/latest.pth'
+# runner = dict(type='EpochBasedRunner', max_epochs=30)

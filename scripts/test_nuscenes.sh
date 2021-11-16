@@ -13,13 +13,13 @@ CHECKPOINT=checkpoints/centerpoint_02pillar_second_secfpn_circlenms_4x8_cyclic_2
 MODEL=centerpoint
 RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_no_cbgs
 CONFIG_FILE=configs/centerpoint/centerpoint_02pillar_nd_second_secfpn_4x8_cyclic_20e_nus.py
-CHECKPOINT=results/nuscenes/centerpoint/nd_pillar_no_cbgs/epoch_5.pth
+CHECKPOINT=${RESULTS_DIR}/latest.pth
 
 # Centerpoint Non-deterministic HV with ConvLSTM module
 MODEL=centerpoint
-RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_convlstm_no_cbgs
+RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_transf1_posemb_no_cbgs
 CONFIG_FILE=configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py
-CHECKPOINT=results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs/latest.pth
+CHECKPOINT=${RESULTS_DIR}/latest.pth
 
 
 # Pointpillars
@@ -54,13 +54,13 @@ CHECKPOINT=results/nuscenes/${MODEL}/latest.pth
 
 # Test
 ./tools/dist_test.sh ${CONFIG_FILE} \
-${CHECKPOINT} 1 \
---out ${RESULTS_DIR}/result_epoch5.pkl \
+${CHECKPOINT} 2 \
+--out ${RESULTS_DIR}/result.pkl \
 --eval mAP 
 
 
 # Train
-./tools/dist_train.sh ${CONFIG_FILE} 1 --work-dir=${RESULTS_DIR}
+./tools/dist_train.sh ${CONFIG_FILE} 2 --work-dir=${RESULTS_DIR}
 
 
 # Browse NuScenes dataset 3D LiDAR detection
