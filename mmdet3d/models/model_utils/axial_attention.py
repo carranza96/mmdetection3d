@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from operator import itemgetter
-from axial_attention.reversible import ReversibleSequence
+# from reversible import ReversibleSequence
 
 # helper functions
 
@@ -111,35 +111,6 @@ class AxialPositionalEmbedding(nn.Module):
             x = x + getattr(self, f'param_{i}')
         return x
 
-# attention
-
-class SelfAttention(nn.Module):
-    def __init__(self, dim, heads, dim_heads = None):
-        super().__init__()
-        self.dim_heads = (dim // heads) if dim_heads is None else dim_heads
-        dim_hidden = self.dim_heads * heads
-
-        self.heads = heads
-        self.to_q = nn.Linear(dim, dim_hidden, bias = False)
-        self.to_kv = nn.Linear(dim, 2 * dim_hidden, bias = False)
-        self.to_out = nn.Linear(dim_hidden, dim)
-
-    def forward(self, x, kv = None):
-        kv = x if kv is None else kv
-        q, k, v = (self.to_q(x), *self.to_kv(kv).chunk(2, dim=-1))
-
-        b, t, d, h, e = *q.shape, self.heads, self.dim_heads
-
-        merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
-        q, k, v = map(merge_heads, (q, k, v))
-
-        dots = torch.einsum('bie,bje->bij', q, k) * (e ** -0.5)
-        dots = dots.softmax(dim=-1)
-        out = torch.einsum('bij,bje->bie', dots, v)
-
-        out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
-        out = self.to_out(out)
-        return out
 
 # axial attention class
 
@@ -193,7 +164,8 @@ class AxialImageTransformer(nn.Module):
             layers.append(attn_functions)
             layers.append(conv_functions)            
 
-        execute_type = ReversibleSequence if reversible else Sequential2
+        # execute_type = ReversibleSequence if reversible else Sequential3
+        execute_type = Sequential3
         self.layers = execute_type(layers)
 
     def forward(self, x):
@@ -201,7 +173,7 @@ class AxialImageTransformer(nn.Module):
         return self.layers(x)
 
 
-class Sequential2(nn.Module):
+class Sequential3(nn.Module):
     def __init__(self, blocks):
         super().__init__()
         self.blocks = blocks
@@ -212,6 +184,45 @@ class Sequential2(nn.Module):
             x = x + g(x)
         return x
         
+
+
+
+
+# attention
+
+class SelfAttention(nn.Module):
+    def __init__(self, dim, heads, dim_heads = None, fc_layer=True):
+        super().__init__()
+        self.dim_heads = (dim // heads) if dim_heads is None else dim_heads
+        dim_hidden = self.dim_heads * heads
+
+        self.heads = heads
+        self.to_q = nn.Linear(dim, dim_hidden, bias = False)
+        self.to_kv = nn.Linear(dim, 2 * dim_hidden, bias = False)
+        self.fc_layer = fc_layer
+        if self.fc_layer:
+            self.to_out = nn.Linear(dim_hidden, dim)
+
+    def forward(self, x, kv = None):
+        kv = x if kv is None else kv
+        q, k, v = (self.to_q(x), *self.to_kv(kv).chunk(2, dim=-1))
+
+        b, t, d, h, e = *q.shape, self.heads, self.dim_heads
+
+        merge_heads = lambda x: x.reshape(b, -1, h, e).transpose(1, 2).reshape(b * h, -1, e)
+        q, k, v = map(merge_heads, (q, k, v))
+
+        dots = torch.einsum('bie,bje->bij', q, k) * (e ** -0.5)
+        dots = dots.softmax(dim=-1)
+        out = torch.einsum('bij,bje->bie', dots, v)
+
+        out = out.reshape(b, h, -1, e).transpose(1, 2).reshape(b, -1, d)
+        if self.fc_layer:
+            out = self.to_out(out)
+        return out
+
+
+
 class Sequential(nn.Module):
     def __init__(self, blocks):
         super().__init__()
@@ -245,28 +256,53 @@ class AxialTempTransformer(nn.Module):
         return self.layers(x)
 
 
-# conv1x1 = nn.Conv2d(3, 128, 1)
+
+class AxialTempTransformer2(nn.Module):
+    
+    def __init__(self, dim, num_dimensions, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
+        super().__init__()
+        permutations = calculate_permutations(num_dimensions, dim_index)
+
+        self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
+        
+        layers = nn.ModuleList([])
+        for _ in range(depth):
+            attn_functions = nn.ModuleList([PermuteToFrom(permutation, PreNorm(dim, SelfAttention(dim, heads, dim_heads, fc_layer=False))) for permutation in permutations])
+            layers.append(attn_functions)
+            to_out = nn.ModuleList([PermuteToFrom(permutations[0], PreNorm(dim, nn.Linear(dim, dim)))])
+            layers.append(to_out)
+
+        self.layers = Sequential(layers)
+
+    def forward(self, x):
+        x = self.pos_emb(x)
+        return self.layers(x)
 
 
-# transformer = AxialImageTransformer(
-#     dim = 128,
-#     depth = 3,
-#     reversible = False
-# )
 
-# img = torch.randn(1, 3, 512, 512)
+
+# from axial_attention import AxialImageTransformer
+# transformer = AxialImageTransformer(dim = 512,depth = 1,reversible = False).cuda()
+# conv1x1 = nn.Conv2d(3, 128, 1).cuda()
+# img = torch.randn(1, 3, 512, 512).cuda()
 # transformer(conv1x1(img)) # (1, 3, 512, 512)
 
-
+# import os
+# import torch
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 # tr2 = AxialTempTransformer(
 #     dim = 384,
 #     num_dimensions = 3,
 #     dim_index = 2,
-#     depth = 1,
+#     depth =2,
 #     heads = 8,
 #     axial_pos_emb_shape = (3, 128, 128),
 #     reversible = False,
-# )
-# vid = torch.randn(1, 3, 384, 128, 128)
-
-# tr2(vid)
+# ).cuda()
+# pytorch_total_params = sum(p.numel() for p in tr2.parameters())
+# print("Num parameters: {}".format(pytorch_total_params))
+# vid = torch.randn(1, 3, 384, 128, 128).cuda()
+# a = tr2(vid)[:, -1]
+# # del vid
+# torch.cuda.empty_cache()
+# print()

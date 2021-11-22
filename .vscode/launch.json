@@ -121,8 +121,8 @@
             "console": "integratedTerminal",
             "args": [
                 "configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py",
-                "results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs/latest.pth", 
-                "--out=results/nuscenes/centerpoint/nd_pillar_convlstm_no_cbgs/result_sample.pkl",
+                "results/nuscenes/centerpoint_old/nd_pillar_convlstm_no_cbgs/latest.pth", 
+                "--out=results/nuscenes/centerpoint_old/nd_pillar_convlstm_no_cbgs/result_sample.pkl",
             ]
         },
 

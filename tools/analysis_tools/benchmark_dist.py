@@ -66,7 +66,8 @@ def main():
         model = fuse_module(model)
 
     model = MMDataParallel(model, device_ids=[0])
-
+    pytorch_total_params = sum(p.numel() for p in model.parameters())
+    print("Num parameters: {}".format(pytorch_total_params))
     model.eval()
 
     # the first several iterations may be very slow so skip them

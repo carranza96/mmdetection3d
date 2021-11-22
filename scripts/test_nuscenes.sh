@@ -11,13 +11,13 @@ CHECKPOINT=checkpoints/centerpoint_02pillar_second_secfpn_circlenms_4x8_cyclic_2
 
 # Centerpoint Non-deterministic HV
 MODEL=centerpoint
-RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_no_cbgs
+RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar
 CONFIG_FILE=configs/centerpoint/centerpoint_02pillar_nd_second_secfpn_4x8_cyclic_20e_nus.py
 CHECKPOINT=${RESULTS_DIR}/latest.pth
 
 # Centerpoint Non-deterministic HV with ConvLSTM module
 MODEL=centerpoint
-RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_transf1_posemb_no_cbgs
+RESULTS_DIR=results/nuscenes/${MODEL}/nd_pillar_transfv2_3l
 CONFIG_FILE=configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py
 CHECKPOINT=${RESULTS_DIR}/latest.pth
 

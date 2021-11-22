@@ -152,7 +152,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=2,
     # train=dict(
     #     type='CBGSDataset',
     #     dataset=dict(
@@ -178,9 +178,9 @@ data = dict(
         box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_val_sample.pkl',
+        ann_file=data_root + 'nuscenes_infos_val.pkl',
         pipeline=test_pipeline, 
         classes=class_names)
     )
 
-evaluation = dict(interval=5, pipeline=eval_pipeline)
+evaluation = dict(interval=1, pipeline=eval_pipeline)
