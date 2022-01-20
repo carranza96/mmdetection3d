@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/datasets/nus-3d.py',
-    '../_base_/models/centerpoint_02pillar_second_secfpn_nus.py',
+    '../_base_/models/centerpoint_01voxel_second_secfpn_nus.py',
     '../_base_/schedules/cyclic_20e.py', '../_base_/default_runtime.py'
 ]
 
@@ -13,11 +13,10 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 
-
 model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
-    pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
+    convlstm_module=True,
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -154,7 +153,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=2,
     # train=dict(
     #     type='CBGSDataset',
     #     dataset=dict(
@@ -180,6 +179,5 @@ data = dict(
         box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
-
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)

@@ -133,10 +133,25 @@
             "program": "tools/train.py",
             "console": "integratedTerminal",
             "args": [
-                "configs/centerpoint/centerpoint_02pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py",
+                "configs/centerpoint/centerpoint_01pillar_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py",
                 "--work-dir=results/nuscenes/centerpoint/prueba",
             ]
         },
+        {
+            "name": "Analyze logs",
+            "type": "python",
+            "request": "launch",
+            "program": "tools/analysis_tools/analyze_logs.py",
+            "console": "integratedTerminal",
+            "args": [
+                "plot_curve",
+                "results/nuscenes/centerpoint02/20epochs/4samplesx2gpus/nd_pillar_transfv2_row/20211208_002939.log.json",
+                "--keys=loss", 
+                "--legend=A",
+                "--out=loss2.pdf"
+            ]
+        },
+
 
 
     ]

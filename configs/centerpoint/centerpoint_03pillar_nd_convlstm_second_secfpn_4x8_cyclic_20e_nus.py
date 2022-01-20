@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/datasets/nus-3d.py',
-    '../_base_/models/centerpoint_02pillar_second_secfpn_nus.py',
+    '../_base_/models/centerpoint_03pillar_second_secfpn_nus.py',
     '../_base_/schedules/cyclic_20e.py', '../_base_/default_runtime.py'
 ]
 
@@ -18,6 +18,7 @@ model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
+    convlstm_module=True,
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -183,3 +184,5 @@ data = dict(
 
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)
+# resume_from = 'results/nuscenes/centerpoint/nd_pillar_attn_no_cbgs/latest.pth'
+# runner = dict(type='EpochBasedRunner', max_epochs=30)

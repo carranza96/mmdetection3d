@@ -13,7 +13,6 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 
-
 model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
@@ -123,6 +122,8 @@ test_pipeline = [
                 translation_std=[0, 0, 0]),
             dict(type='RandomFlip3D'),
             dict(
+                type='PointsRangeFilter', point_cloud_range=point_cloud_range),
+            dict(
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
                 with_label=False),
@@ -153,7 +154,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=4,
     # train=dict(
     #     type='CBGSDataset',
     #     dataset=dict(
@@ -178,11 +179,7 @@ data = dict(
         # and box_type_3d='Depth' in sunrgbd and scannet dataset.
         box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
-    test=dict(data_root=data_root,
-        ann_file=data_root + 'nuscenes_infos_val.pkl',
-        pipeline=test_pipeline, 
-        classes=class_names)
-    )
+    test=dict(pipeline=test_pipeline, classes=class_names))
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)
 # resume_from = 'results/nuscenes/centerpoint/nd_pillar_attn_no_cbgs/latest.pth'
