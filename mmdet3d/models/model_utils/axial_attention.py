@@ -262,14 +262,15 @@ class AxialTempTransformer2(nn.Module):
     def __init__(self, dim, num_dimensions, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
         super().__init__()
         permutations = calculate_permutations(num_dimensions, dim_index)
-
+        permutations = [permutations[1],permutations[2], permutations[0]]
+        print(permutations)
         self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
         
         layers = nn.ModuleList([])
         for _ in range(depth):
             attn_functions = nn.ModuleList([PermuteToFrom(permutation, PreNorm(dim, SelfAttention(dim, heads, dim_heads, fc_layer=False))) for permutation in permutations])
             layers.append(attn_functions)
-            to_out = nn.ModuleList([PermuteToFrom(permutations[0], PreNorm(dim, nn.Linear(dim, dim)))])
+            to_out = nn.ModuleList([PermuteToFrom(permutations[2], PreNorm(dim, nn.Linear(dim, dim)))])
             layers.append(to_out)
 
         self.layers = Sequential(layers)
