@@ -119,7 +119,7 @@ class MVXTwoStageDetector(Base3DDetector):
             #     return_all_layers = False
             # )
 
-            self.attn = AxialTempTransformer2(
+            self.attn = AxialTempTransformer(
                 dim = 384,
                 num_dimensions = 3,
                 dim_index = 2,
@@ -129,7 +129,7 @@ class MVXTwoStageDetector(Base3DDetector):
                 # axial_pos_emb_shape = (3, 128, 128), # 0.2
                 axial_pos_emb_shape = (3, 174, 174), # 0.15
                 # axial_pos_emb_shape = (3, 256, 256), # 0.1
-                reversible = False,
+                fc_layer_each_attn=False            
             )
             
             # self.linear = torch.nn.Linear(3,1).cuda()
