@@ -269,3 +269,28 @@ class AxialTempTransformer(nn.Module):
     def forward(self, x):
         x = self.pos_emb(x)
         return self.layers(x)
+
+
+# import os
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+# transformer = AxialImageTransformer(dim = 128, depth = 1, reversible = False)
+# conv1x1 = nn.Conv2d(3, 128, 1)
+# img = torch.randn(1, 3, 512, 512)
+# transformer(conv1x1(img)) # (1, 3, 512, 512)
+
+# tr2 = AxialTempTransformer(
+#     dim = 384,
+#     num_dimensions = 3,
+#     dim_index = 2,
+#     depth =2,
+#     heads = 8,
+#     axial_pos_emb_shape = (3, 128, 128),
+# )
+# pytorch_total_params = sum(p.numel() for p in tr2.parameters())
+# print("Num parameters: {}".format(pytorch_total_params))
+# vid = torch.randn(1, 3, 384, 128, 128)
+# a = tr2(vid)[:, -1]
+# # del vid
+# torch.cuda.empty_cache()
+# print()
