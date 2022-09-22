@@ -18,7 +18,14 @@ model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
-    convlstm_module=True,
+    pts_temporal_encoder=dict(type='AxialAttentionTransformer',
+            dim = 384,
+            num_dimensions = 3,
+            depth = 1,
+            heads = 8,
+            dim_index = 2,
+            axial_pos_emb_shape = (3, 256, 256),
+            fc_layer_attn=False),,
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -184,5 +191,4 @@ data = dict(
 
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)
-# resume_from = 'results/nuscenes/centerpoint/nd_pillar_attn_no_cbgs/latest.pth'
 # runner = dict(type='EpochBasedRunner', max_epochs=30)

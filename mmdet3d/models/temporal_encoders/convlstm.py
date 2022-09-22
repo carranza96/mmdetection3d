@@ -2,6 +2,8 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch
 
+from ..builder import MODELS
+
 
 class ConvLSTMCell(nn.Module):
 
@@ -69,7 +71,7 @@ class ConvLSTMCell(nn.Module):
         return (Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda(),
                 Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda())
 
-
+@MODELS.register_module()
 class ConvLSTM(nn.Module):
 
     def __init__(self, input_size, input_dim, hidden_dim, kernel_size, num_layers,
@@ -152,10 +154,10 @@ class ConvLSTM(nn.Module):
             last_state_list.append([h, c])
 
         if not self.return_all_layers:
-            layer_output_list = layer_output_list[-1:]
-            last_state_list = last_state_list[-1:]
+            layer_output_list = layer_output_list[-1]
+            last_state_list = last_state_list[-1]
 
-        return output_inner
+        return layer_output_list
 
     def _init_hidden(self, batch_size):
         init_states = []

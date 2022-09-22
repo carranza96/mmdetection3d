@@ -18,6 +18,15 @@ model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
+    pts_temporal_encoder=dict(type='ConvLSTM',
+        input_size = (90, 90),
+        input_dim = 384,
+        hidden_dim = 384,
+        kernel_size = (1, 1),
+        num_layers = 1,
+        batch_first = True,
+        bias = False,
+        return_all_layers = False),
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -180,6 +189,6 @@ data = dict(
         box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
-
-
+    
 evaluation = dict(interval=1, pipeline=eval_pipeline)
+# runner = dict(type='EpochBasedRunner', max_epochs=30)

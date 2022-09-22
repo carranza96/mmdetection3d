@@ -14,7 +14,6 @@ from mmdet.core import multi_apply
 from mmdet.models import DETECTORS
 from .. import builder
 from .base import Base3DDetector
-from mmdet3d.models.model_utils import ConvLSTM, AxialTempTransformer
 
 @DETECTORS.register_module()
 class MVXTwoStageDetector(Base3DDetector):
@@ -106,38 +105,6 @@ class MVXTwoStageDetector(Base3DDetector):
                     key, please consider using init_cfg')
                 self.pts_backbone.init_cfg = dict(
                     type='Pretrained', checkpoint=pts_pretrained)
-
-        # self.pts_temporal_encoder = pts_temporal_encoder
-        
-        # if self.pts_temporal_encoder:
-        #     # self.convlstm = ConvLSTM(
-        #     #     input_size = (90, 90),
-        #     #     # input_size = (128, 128),
-        #     #     # input_size = (174, 174),
-        #     #     # input_size = (256, 256),
-        #     #     input_dim = 384,
-        #     #     hidden_dim = 384,
-        #     #     kernel_size = (1, 1),
-        #     #     num_layers = 1,
-        #     #     batch_first = True,
-        #     #     bias = False,
-        #     #     return_all_layers = False
-        #     # )
-
-        #     self.attn = AxialTempTransformer(
-        #         dim = 384,
-        #         num_dimensions = 3,
-        #         dim_index = 2,
-        #         depth = 1,
-        #         heads = 8,
-        #         # axial_pos_emb_shape = (3, 90, 90), # 0.3
-        #         axial_pos_emb_shape = (3, 128, 128), # 0.2
-        #         # axial_pos_emb_shape = (3, 174, 174), # 0.15
-        #         # axial_pos_emb_shape = (3, 256, 256), # 0.1
-        #         fc_layer_attn=False            
-        #     )
-            
-            # self.linear = torch.nn.Linear(3,1).cuda()
 
 
     @property
@@ -479,27 +446,12 @@ class MVXTwoStageDetector(Base3DDetector):
                 pcs2, img=img, img_metas=img_metas)
 
         # Create 5-D Tensor (b, t, c, h, w)
-        # t = time()
         temp_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
         pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
-        # pts_feats = [self.convlstm(temp_input)[-1]]
-        # torch.cuda.synchronize()
-        # print(time() - t)
-        # pts_feats = [self.convlstm(temp_input)[-1]]
-        
-        # pts_feats = self.attn(temp_input)
-        # avgpool = torch.nn.AvgPool1d(3).cuda()
-        # a = pts_feats.reshape(pts_feats.shape[0],3,384*128*128).permute(0,2,1)
-        # pts_feats = [avgpool(a).reshape(pts_feats.shape[0], 384, 128, 128)]
-
-        # a = pts_feats.permute(0,2,3,4,1)
-        # pts_feats = [self.linear(a).permute(0,4,1,2,3).squeeze(1)]
-
-
         img_feats = None
 
-
         return img_feats, pts_feats
+
 
     def simple_test(self, points, img_metas, img=None, rescale=False):
         """Test function without augmentaiton."""

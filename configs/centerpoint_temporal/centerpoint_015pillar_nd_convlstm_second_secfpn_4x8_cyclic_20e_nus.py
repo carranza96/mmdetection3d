@@ -1,6 +1,6 @@
 _base_ = [
     '../_base_/datasets/nus-3d.py',
-    '../_base_/models/centerpoint_02pillar_second_secfpn_nus.py',
+    '../_base_/models/centerpoint_015pillar_second_secfpn_nus.py',
     '../_base_/schedules/cyclic_20e.py', '../_base_/default_runtime.py'
 ]
 
@@ -18,6 +18,15 @@ model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
+    pts_temporal_encoder=dict(type='ConvLSTM',
+        input_size = (174, 174),
+        input_dim = 384,
+        hidden_dim = 384,
+        kernel_size = (1, 1),
+        num_layers = 1,
+        batch_first = True,
+        bias = False,
+        return_all_layers = False),
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -154,7 +163,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=2,
     # train=dict(
     #     type='CBGSDataset',
     #     dataset=dict(
@@ -181,5 +190,5 @@ data = dict(
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
 
-
 evaluation = dict(interval=1, pipeline=eval_pipeline)
+# runner = dict(type='EpochBasedRunner', max_epochs=30)
