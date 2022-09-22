@@ -15,6 +15,7 @@ class CenterPoint(MVXTwoStageDetector):
                  pts_voxel_encoder=None,
                  pts_middle_encoder=None,
                  pts_fusion_layer=None,
+                 pts_temporal_encoder=None,
                  img_backbone=None,
                  pts_backbone=None,
                  img_neck=None,
@@ -26,13 +27,13 @@ class CenterPoint(MVXTwoStageDetector):
                  test_cfg=None,
                  pretrained=None,
                  init_cfg=None,
-                 temporal_encoder=False):
+                 ):
         super(CenterPoint,
               self).__init__(pts_voxel_layer, pts_voxel_encoder,
-                             pts_middle_encoder, pts_fusion_layer,
+                             pts_middle_encoder, pts_fusion_layer, pts_temporal_encoder,
                              img_backbone, pts_backbone, img_neck, pts_neck,
                              pts_bbox_head, img_roi_head, img_rpn_head,
-                             train_cfg, test_cfg, pretrained, init_cfg, temporal_encoder)
+                             train_cfg, test_cfg, pretrained, init_cfg)
 
     def extract_pts_feat(self, pts, img_feats, img_metas):
         """Extract features of points."""

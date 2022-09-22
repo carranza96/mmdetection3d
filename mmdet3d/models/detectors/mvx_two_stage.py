@@ -25,6 +25,7 @@ class MVXTwoStageDetector(Base3DDetector):
                  pts_voxel_encoder=None,
                  pts_middle_encoder=None,
                  pts_fusion_layer=None,
+                 pts_temporal_encoder=None,
                  img_backbone=None,
                  pts_backbone=None,
                  img_neck=None,
@@ -36,7 +37,7 @@ class MVXTwoStageDetector(Base3DDetector):
                  test_cfg=None,
                  pretrained=None,
                  init_cfg=None,
-                 temporal_encoder=False):
+                 ):
         super(MVXTwoStageDetector, self).__init__(init_cfg=init_cfg)
 
         if pts_voxel_layer:
@@ -54,6 +55,9 @@ class MVXTwoStageDetector(Base3DDetector):
                 pts_fusion_layer)
         if pts_neck is not None:
             self.pts_neck = builder.build_neck(pts_neck)
+        if pts_temporal_encoder is not None:
+            self.pts_temporal_encoder = builder.MODELS.build(pts_temporal_encoder)
+
         if pts_bbox_head:
             pts_train_cfg = train_cfg.pts if train_cfg else None
             pts_bbox_head.update(train_cfg=pts_train_cfg)
@@ -103,34 +107,35 @@ class MVXTwoStageDetector(Base3DDetector):
                 self.pts_backbone.init_cfg = dict(
                     type='Pretrained', checkpoint=pts_pretrained)
 
-        self.temporal_encoder = temporal_encoder
-        if self.temporal_encoder:
-            # self.convlstm = ConvLSTM(
-            #     input_size = (90, 90),
-            #     # input_size = (128, 128),
-            #     # input_size = (174, 174),
-            #     # input_size = (256, 256),
-            #     input_dim = 384,
-            #     hidden_dim = 384,
-            #     kernel_size = (1, 1),
-            #     num_layers = 1,
-            #     batch_first = True,
-            #     bias = False,
-            #     return_all_layers = False
-            # )
+        # self.pts_temporal_encoder = pts_temporal_encoder
+        
+        # if self.pts_temporal_encoder:
+        #     # self.convlstm = ConvLSTM(
+        #     #     input_size = (90, 90),
+        #     #     # input_size = (128, 128),
+        #     #     # input_size = (174, 174),
+        #     #     # input_size = (256, 256),
+        #     #     input_dim = 384,
+        #     #     hidden_dim = 384,
+        #     #     kernel_size = (1, 1),
+        #     #     num_layers = 1,
+        #     #     batch_first = True,
+        #     #     bias = False,
+        #     #     return_all_layers = False
+        #     # )
 
-            self.attn = AxialTempTransformer(
-                dim = 384,
-                num_dimensions = 3,
-                dim_index = 2,
-                depth = 1,
-                heads = 8,
-                # axial_pos_emb_shape = (3, 90, 90), # 0.3
-                axial_pos_emb_shape = (3, 128, 128), # 0.2
-                # axial_pos_emb_shape = (3, 174, 174), # 0.15
-                # axial_pos_emb_shape = (3, 256, 256), # 0.1
-                fc_layer_attn=False            
-            )
+        #     self.attn = AxialTempTransformer(
+        #         dim = 384,
+        #         num_dimensions = 3,
+        #         dim_index = 2,
+        #         depth = 1,
+        #         heads = 8,
+        #         # axial_pos_emb_shape = (3, 90, 90), # 0.3
+        #         axial_pos_emb_shape = (3, 128, 128), # 0.2
+        #         # axial_pos_emb_shape = (3, 174, 174), # 0.15
+        #         # axial_pos_emb_shape = (3, 256, 256), # 0.1
+        #         fc_layer_attn=False            
+        #     )
             
             # self.linear = torch.nn.Linear(3,1).cuda()
 
@@ -303,7 +308,7 @@ class MVXTwoStageDetector(Base3DDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if not self.temporal_encoder:
+        if not self.pts_temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
@@ -475,14 +480,14 @@ class MVXTwoStageDetector(Base3DDetector):
 
         # Create 5-D Tensor (b, t, c, h, w)
         # t = time()
-        rnn_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
-        pts_feats = [self.attn(rnn_input)[:, -1]]
-        # pts_feats = [self.convlstm(rnn_input)[-1]]
+        temp_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
+        pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
+        # pts_feats = [self.convlstm(temp_input)[-1]]
         # torch.cuda.synchronize()
         # print(time() - t)
-        # pts_feats = [self.convlstm(rnn_input)[-1]]
+        # pts_feats = [self.convlstm(temp_input)[-1]]
         
-        # pts_feats = self.attn(rnn_input)
+        # pts_feats = self.attn(temp_input)
         # avgpool = torch.nn.AvgPool1d(3).cuda()
         # a = pts_feats.reshape(pts_feats.shape[0],3,384*128*128).permute(0,2,1)
         # pts_feats = [avgpool(a).reshape(pts_feats.shape[0], 384, 128, 128)]
@@ -498,7 +503,7 @@ class MVXTwoStageDetector(Base3DDetector):
 
     def simple_test(self, points, img_metas, img=None, rescale=False):
         """Test function without augmentaiton."""
-        if not self.temporal_encoder:
+        if not self.pts_temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
