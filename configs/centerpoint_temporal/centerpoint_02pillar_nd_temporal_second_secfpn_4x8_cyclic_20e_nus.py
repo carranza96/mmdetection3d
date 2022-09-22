@@ -182,5 +182,4 @@ data = dict(
     test=dict(pipeline=test_pipeline, classes=class_names))
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)
-# resume_from = 'results/nuscenes/centerpoint/nd_pillar_attn_no_cbgs/latest.pth'
-# runner = dict(type='EpochBasedRunner', max_epochs=30)
+# runner = dict(type='EpochBasedRunner', max_epochs=20)

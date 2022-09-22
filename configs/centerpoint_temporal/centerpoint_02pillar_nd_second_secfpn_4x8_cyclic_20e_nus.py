@@ -13,7 +13,6 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 
-
 model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
@@ -180,6 +179,5 @@ data = dict(
         box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
-
 
 evaluation = dict(interval=1, pipeline=eval_pipeline)

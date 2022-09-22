@@ -307,7 +307,7 @@ class MVXTwoStageDetector(Base3DDetector):
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
-            img_feats, pts_feats = self.extract_feat_convlstm(
+            img_feats, pts_feats = self.extract_feat_temporal(
                 points, img=img, img_metas=img_metas)
 
         losses = dict()
@@ -438,7 +438,7 @@ class MVXTwoStageDetector(Base3DDetector):
         return bbox_results
 
     
-    def extract_feat_convlstm(self, points, img, img_metas):
+    def extract_feat_temporal(self, points, img, img_metas):
         
         pcs0, pcs1, pcs2 = [], [], []
         # Chunk sweeps in three groups for each sample within the batch
@@ -492,9 +492,6 @@ class MVXTwoStageDetector(Base3DDetector):
 
 
         img_feats = None
-        # matt = torch.nn.MultiheadAttention(embed_dim=384, num_heads=6, kdim=int(384/6), batch_first=True).cuda()
-        # tf.keras.layers.MultiHeadAttention(num_heads=6, key_dim=int(math.trunc(32/6)), attention_axes=(1, 2, 3))(net59, net59, net59, None)
-
 
 
         return img_feats, pts_feats
@@ -505,7 +502,7 @@ class MVXTwoStageDetector(Base3DDetector):
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
-            img_feats, pts_feats = self.extract_feat_convlstm(
+            img_feats, pts_feats = self.extract_feat_temporal(
                 points, img=img, img_metas=img_metas)
 
         bbox_list = [dict() for i in range(len(img_metas))]

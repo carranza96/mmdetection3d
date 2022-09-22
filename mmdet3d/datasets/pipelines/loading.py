@@ -227,7 +227,6 @@ class LoadPointsFromMultiSweeps(object):
         points = points.cat(sweep_points_list)
         points = points[:, self.use_dim]
         results['points'] = points
-        
         return results
 
     def __repr__(self):
