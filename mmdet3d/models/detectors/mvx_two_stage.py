@@ -14,7 +14,7 @@ from mmdet.core import multi_apply
 from mmdet.models import DETECTORS
 from .. import builder
 from .base import Base3DDetector
-from mmdet3d.models.model_utils import ConvLSTM, AxialTempTransformer,  AxialTempTransformer2
+from mmdet3d.models.model_utils import ConvLSTM, AxialTempTransformer
 
 @DETECTORS.register_module()
 class MVXTwoStageDetector(Base3DDetector):
@@ -36,7 +36,7 @@ class MVXTwoStageDetector(Base3DDetector):
                  test_cfg=None,
                  pretrained=None,
                  init_cfg=None,
-                 convlstm_module=False):
+                 temporal_encoder=False):
         super(MVXTwoStageDetector, self).__init__(init_cfg=init_cfg)
 
         if pts_voxel_layer:
@@ -103,8 +103,8 @@ class MVXTwoStageDetector(Base3DDetector):
                 self.pts_backbone.init_cfg = dict(
                     type='Pretrained', checkpoint=pts_pretrained)
 
-        self.convlstm_module = convlstm_module
-        if self.convlstm_module:
+        self.temporal_encoder = temporal_encoder
+        if self.temporal_encoder:
             # self.convlstm = ConvLSTM(
             #     input_size = (90, 90),
             #     # input_size = (128, 128),
@@ -126,10 +126,10 @@ class MVXTwoStageDetector(Base3DDetector):
                 depth = 1,
                 heads = 8,
                 # axial_pos_emb_shape = (3, 90, 90), # 0.3
-                # axial_pos_emb_shape = (3, 128, 128), # 0.2
-                axial_pos_emb_shape = (3, 174, 174), # 0.15
+                axial_pos_emb_shape = (3, 128, 128), # 0.2
+                # axial_pos_emb_shape = (3, 174, 174), # 0.15
                 # axial_pos_emb_shape = (3, 256, 256), # 0.1
-                fc_layer_each_attn=False            
+                fc_layer_attn=False            
             )
             
             # self.linear = torch.nn.Linear(3,1).cuda()
@@ -303,7 +303,7 @@ class MVXTwoStageDetector(Base3DDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if not self.convlstm_module:
+        if not self.temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
@@ -501,7 +501,7 @@ class MVXTwoStageDetector(Base3DDetector):
 
     def simple_test(self, points, img_metas, img=None, rescale=False):
         """Test function without augmentaiton."""
-        if not self.convlstm_module:
+        if not self.temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:

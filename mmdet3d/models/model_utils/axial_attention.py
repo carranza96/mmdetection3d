@@ -226,31 +226,9 @@ class Sequential(nn.Module):
         return x
 
 
-
 class AxialTempTransformer(nn.Module):
     
-    def __init__(self, dim, num_dimensions, depth, heads = 8, dim_heads = None, dim_index = 1, reversible = True, axial_pos_emb_shape = None):
-        super().__init__()
-        permutations = calculate_permutations(num_dimensions, dim_index)
-
-        self.pos_emb = AxialPositionalEmbedding(dim, axial_pos_emb_shape, dim_index) if exists(axial_pos_emb_shape) else nn.Identity()
-
-        layers = nn.ModuleList([])
-        for _ in range(depth):
-            attn_functions = nn.ModuleList([PermuteToFrom(permutation, PreNorm(dim, SelfAttention(dim, heads, dim_heads))) for permutation in permutations])
-            layers.append(attn_functions)       
-
-        self.layers = Sequential(layers)
-
-    def forward(self, x):
-        x = self.pos_emb(x)
-        return self.layers(x)
-
-
-
-class AxialTempTransformer(nn.Module):
-    
-    def __init__(self, dim, num_dimensions, depth, heads = 8, dim_heads = None, dim_index = 1, axial_pos_emb_shape = None, fc_layer_each_attn=False):
+    def __init__(self, dim, num_dimensions, depth, heads = 8, dim_heads = None, dim_index = 1, axial_pos_emb_shape = None, fc_layer_attn=False):
         super().__init__()
         permutations = calculate_permutations(num_dimensions, dim_index)
         permutations = [permutations[1],permutations[2], permutations[0]] # Spatial attention first
@@ -259,9 +237,9 @@ class AxialTempTransformer(nn.Module):
         layers = nn.ModuleList([])
         for _ in range(depth):
             attn_functions = nn.ModuleList([PermuteToFrom(permutation, 
-                PreNorm(dim, SelfAttention(dim, heads, dim_heads, fc_layer=fc_layer_each_attn))) for permutation in permutations])
+                PreNorm(dim, SelfAttention(dim, heads, dim_heads, fc_layer=fc_layer_attn))) for permutation in permutations])
             layers.append(attn_functions)
-            to_out = nn.ModuleList([PermuteToFrom(permutations[2], PreNorm(dim, nn.Linear(dim, dim)))])
+            to_out = nn.ModuleList([PermuteToFrom(permutations[-1], PreNorm(dim, nn.Linear(dim, dim)))])
             layers.append(to_out)
 
         self.layers = Sequential(layers)
@@ -269,28 +247,3 @@ class AxialTempTransformer(nn.Module):
     def forward(self, x):
         x = self.pos_emb(x)
         return self.layers(x)
-
-
-# import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-# transformer = AxialImageTransformer(dim = 128, depth = 1, reversible = False)
-# conv1x1 = nn.Conv2d(3, 128, 1)
-# img = torch.randn(1, 3, 512, 512)
-# transformer(conv1x1(img)) # (1, 3, 512, 512)
-
-# tr2 = AxialTempTransformer(
-#     dim = 384,
-#     num_dimensions = 3,
-#     dim_index = 2,
-#     depth =2,
-#     heads = 8,
-#     axial_pos_emb_shape = (3, 128, 128),
-# )
-# pytorch_total_params = sum(p.numel() for p in tr2.parameters())
-# print("Num parameters: {}".format(pytorch_total_params))
-# vid = torch.randn(1, 3, 384, 128, 128)
-# a = tr2(vid)[:, -1]
-# # del vid
-# torch.cuda.empty_cache()
-# print()
