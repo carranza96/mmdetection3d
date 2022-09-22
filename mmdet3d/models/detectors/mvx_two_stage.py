@@ -15,6 +15,7 @@ from mmdet.models import DETECTORS
 from .. import builder
 from .base import Base3DDetector
 
+
 @DETECTORS.register_module()
 class MVXTwoStageDetector(Base3DDetector):
     """Base class of Multi-modality VoxelNet."""
@@ -56,7 +57,6 @@ class MVXTwoStageDetector(Base3DDetector):
             self.pts_neck = builder.build_neck(pts_neck)
         if pts_temporal_encoder is not None:
             self.pts_temporal_encoder = builder.MODELS.build(pts_temporal_encoder)
-
         if pts_bbox_head:
             pts_train_cfg = train_cfg.pts if train_cfg else None
             pts_bbox_head.update(train_cfg=pts_train_cfg)
@@ -105,7 +105,6 @@ class MVXTwoStageDetector(Base3DDetector):
                     key, please consider using init_cfg')
                 self.pts_backbone.init_cfg = dict(
                     type='Pretrained', checkpoint=pts_pretrained)
-
 
     @property
     def with_img_shared_head(self):
