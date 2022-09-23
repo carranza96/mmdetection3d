@@ -40,7 +40,7 @@ CONFIG_FILE=configs/centerpoint_temporal/centerpoint_015pillar_nd_second_secfpn_
 
 # Centerpoint Non-deterministic HV with Temporal Encoder (Transformer)
 MODEL=centerpoint
-RESULTS_DIR=results/nuscenes/${MODEL}015/30epochs/nd_pillar_transfv2_row_fix_bis
+RESULTS_DIR=results/nuscenes/${MODEL}015/30epochs/nd_pillar_transfv2_row_fix
 CONFIG_FILE=configs/centerpoint_temporal/centerpoint_015pillar_nd_transformer_second_secfpn_4x8_cyclic_20e_nus.py
 
 # Centerpoint Non-deterministic HV with Temporal Encoder (ConvLSTM)
@@ -71,13 +71,11 @@ CONFIG_FILE=configs/centerpoint_temporal/centerpoint_03pillar_nd_convlstm_second
 
 
 
-
 # Voxel 0.1
 MODEL=centerpoint
 RESULTS_DIR=results/nuscenes/${MODEL}01/30epochs/nd_voxel_transfv2_row
 CONFIG_FILE=configs/centerpoint/centerpoint_01voxel_nd_convlstm_second_secfpn_4x8_cyclic_20e_nus.py
 CHECKPOINT=${RESULTS_DIR}/latest.pth
-
 
 
 
