@@ -7,17 +7,54 @@ We propose a modified CenterPoint architecture, with a novel temporal encoder  t
 axial attention to exploit the sequential nature of autonomous driving data for 3D object detection. The last ten LiDAR sweeps are split into three groups of frames, and the axial attention transformer block captures both spatial and temporal dependencies among the features extracted from each group.
 We used the nuScenes dataset, available at www.nuScenes.org, and we plan to extend this work with other datasets such as Waymo.
 
-![](resources/arch.png)
+![Architecture](resources/arch.png)
 
 The main modifications in the MMDetection3D repository are the following:
 
 - **Temporal encoders**: The designed [axial attention transformer](mmdet3d/models/temporal_encoders/axial_attention_transformer.py) and [ConvLSTM](mmdet3d/models/temporal_encoders/convlstm.py) are registered as modules, so they can be easily build from the config files.
-- **Detector with temporal encoder**: We have modified the [centerpoint.py](mmdet3d/models/detectors/centerpoint.py) and [mvx_two_stage.py](mmdet3d/models/detectors/mvx_two_stage.py) to support the use of the temporal encoder, named pts_temporal_encoder.
+- **Modified detector model with temporal encoder**: We have modified the [centerpoint.py](mmdet3d/models/detectors/centerpoint.py) and [mvx_two_stage.py](mmdet3d/models/detectors/mvx_two_stage.py) to support the use of the temporal encoder, named pts_temporal_encoder.
 - **Config files**: Prepared several configurations with different pillar sizes using the CP-TAA architecture in the [centerpoint_temporal](configs/centerpoint_temporal) folder.
 - **Scripts**: Prepared a [script file](scripts/nuscenes_scripts.sh) with all necessary scripts to run train, test, evaluation, visualization, etc.
 
 
 ## Example usage
+This [config file](configs/centerpoint_temporal/centerpoint_02pillar_nd_transformer_second_secfpn_4x8_cyclic_20e_nus.py) can be used for the CP-TAA architecure with pillar size 0.2. 
+
+The main change is to add the pts_temporal_encoder, with adequate parameters, in the model config dict.
+
+```
+model = dict(
+  pts_temporal_encoder=dict(type='AxialAttentionTransformer',
+            dim = 384,
+            num_dimensions = 3,
+            depth = 1,
+            heads = 8,
+            dim_index = 2,
+            axial_pos_emb_shape = (3, 256, 256),
+            fc_layer_attn=False))
+```
+
+To **train** the model with 2 GPUs
+
+```bash
+RESULTS_DIR=results/nuscenes/centerpoint02/
+CONFIG_FILE=configs/centerpoint_temporal/centerpoint_02pillar_nd_transformer_second_secfpn_4x8_cyclic_20e_nus.py
+./tools/dist_train.sh ${CONFIG_FILE} 2 --work-dir=${RESULTS_DIR}
+```
+
+To **test** the model with 2 GPUs
+
+```bash
+RESULTS_DIR=results/nuscenes/centerpoint02/
+CONFIG_FILE=configs/centerpoint_temporal/centerpoint_02pillar_nd_transformer_second_secfpn_4x8_cyclic_20e_nus.py
+CHECKPOINT=${RESULTS_DIR}/latest.pth
+
+./tools/dist_test.sh ${CONFIG_FILE} \
+${CHECKPOINT} 2 \
+--out ${RESULTS_DIR}/result.pkl \
+--eval mAP 
+```
+
 
 ## Citation
 
