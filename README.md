@@ -52,7 +52,7 @@ model = dict(
             depth=1,
             heads=8,
             dim_index=2,
-            axial_pos_emb_shape=(3, 256, 256),
+            axial_pos_emb_shape=(3, 128, 128),
             fc_layer_attn=False))
 ```
 ### Training
