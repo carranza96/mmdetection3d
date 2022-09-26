@@ -158,13 +158,6 @@ class AxialAttentionTransformer(BaseModule):
                  init_cfg=None
                  ):
         super(AxialAttentionTransformer, self).__init__(init_cfg=init_cfg)
-        # self.model = AxialTempTransformer(dim=dim,
-        #                                   num_dimensions=num_dimensions,
-        #                                   depth=depth,
-        #                                   heads=heads,
-        #                                   dim_index=dim_index,
-        #                                   axial_pos_emb_shape=axial_pos_emb_shape,
-        #                                   fc_layer_attn=fc_layer_attn)
         
         permutations = calculate_permutations(num_dimensions, dim_index)
         permutations = [permutations[1],permutations[2], permutations[0]] # Spatial attention first
