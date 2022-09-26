@@ -8,14 +8,11 @@ This project has been developed with version v0.17.1. of MMDetection3D.
 
 The following versions of the MMCV libraries are required:
 - Python 3.6+ (Tested with 3.8 and 3.9)
-- PyTorch 1.9.0 - CUDA 10.2 / PyTorch 1.11.0 - CUDA 11.5
+- PyTorch 1.9.0 - CUDA 10.2 
 - [MMCV](https://github.com/open-mmlab/mmcv): mmcv>=1.3.8, <=1.4.0 
 ```bash
 ## PyTorch 1.9.0 - CUDA 10.2
 pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.9.0/index.html
-
-## PyTorch 1.11.0 - CUDA 11.5
-pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu115/torch1.11.0/index.html
 ```
 - [MMDetection](https://github.com/open-mmlab/mmdetection): mmdet>=2.14.0, <=3.0.0     `pip install mmdet`
 - [MMSegmentation](https://github.com/open-mmlab/mmsegmentation): mmseg>=0.14.1, <=1.0.0     `pip install mmsegmentation`
