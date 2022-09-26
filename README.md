@@ -16,6 +16,7 @@ pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu102/t
 ```
 - [MMDetection](https://github.com/open-mmlab/mmdetection): mmdet>=2.14.0, <=3.0.0     `pip install mmdet`
 - [MMSegmentation](https://github.com/open-mmlab/mmsegmentation): mmseg>=0.14.1, <=1.0.0     `pip install mmsegmentation`
+- MMDetection3D: `pip install -v -e .`
 
 ## Introduction
 This work has been published in ICIP 2022, and the paper can be found [here]((http://www-video.eecs.berkeley.edu/papers/cgmanuel/ICIP_2022_Manuel__Copy_.pdf)).
