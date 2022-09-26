@@ -149,6 +149,12 @@ class MVXTwoStageDetector(Base3DDetector):
     def with_pts_neck(self):
         """bool: Whether the detector has a neck in 3D detector branch."""
         return hasattr(self, 'pts_neck') and self.pts_neck is not None
+    
+    @property
+    def with_pts_temporal_encoder(self):
+        """bool: Whether the detector has a temporal encoder."""
+        return hasattr(self,
+                       'pts_temporal_encoder') and self.pts_temporal_encoder is not None     
 
     @property
     def with_img_rpn(self):
@@ -170,7 +176,7 @@ class MVXTwoStageDetector(Base3DDetector):
     def with_middle_encoder(self):
         """bool: Whether the detector has a middle encoder."""
         return hasattr(self,
-                       'middle_encoder') and self.middle_encoder is not None
+                       'middle_encoder') and self.middle_encoder is not None       
 
     def extract_img_feat(self, img, img_metas):
         """Extract features of images."""
@@ -274,7 +280,7 @@ class MVXTwoStageDetector(Base3DDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if not self.pts_temporal_encoder:
+        if not self.with_pts_temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:
@@ -454,7 +460,7 @@ class MVXTwoStageDetector(Base3DDetector):
 
     def simple_test(self, points, img_metas, img=None, rescale=False):
         """Test function without augmentaiton."""
-        if not self.pts_temporal_encoder:
+        if not self.with_pts_temporal_encoder:
             img_feats, pts_feats = self.extract_feat(
                 points, img=img, img_metas=img_metas)
         else:

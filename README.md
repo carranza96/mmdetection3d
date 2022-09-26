@@ -3,6 +3,24 @@
 This project is forked from the MMDetection 3D repository https://github.com/open-mmlab/mmdetection3d.
 For installation and dataset preparation please follow the instructions on [this page](README_mmdet3d.md).
 
+## Important requirements
+This project has been developed with version v0.17.1. of MMDetection3D.
+
+The following versions of the MMCV libraries are required:
+- Python 3.6+ (Tested with 3.8 and 3.9)
+- PyTorch 1.9.0 - CUDA 10.2 / PyTorch 1.11.0 - CUDA 11.5
+- [MMCV](https://github.com/open-mmlab/mmcv): mmcv>=1.3.8, <=1.4.0 
+```bash
+## PyTorch 1.9.0 - CUDA 10.2
+pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.9.0/index.html
+
+## PyTorch 1.11.0 - CUDA 11.5
+pip install mmcv-full==1.4.0 -f https://download.openmmlab.com/mmcv/dist/cu115/torch1.11.0/index.html
+```
+- [MMDetection](https://github.com/open-mmlab/mmdetection): mmdet>=2.14.0, <=3.0.0     `pip install mmdet`
+- [MMSegmentation](https://github.com/open-mmlab/mmsegmentation): mmseg>=0.14.1, <=1.0.0     `pip install mmsegmentation`
+
+## Introduction
 This work has been published in ICIP 2022, and the paper can be found [here]((http://www-video.eecs.berkeley.edu/papers/cgmanuel/ICIP_2022_Manuel__Copy_.pdf)).
 
 We propose a modified CenterPoint architecture, with a novel temporal encoder  that uses temporal
