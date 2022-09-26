@@ -20,6 +20,7 @@ from .roi_heads import *  # noqa: F401,F403
 from .segmentors import *  # noqa: F401,F403
 from .test_time_augs import *  # noqa: F401,F403
 from .utils import *  # noqa: F401,F403
+from .temporal_encoders import *
 from .voxel_encoders import *  # noqa: F401,F403
 
 __all__ = [

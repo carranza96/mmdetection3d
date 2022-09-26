@@ -24,6 +24,8 @@ class CenterPoint(MVXTwoStageDetector):
             image features. Defaults to None.
         pts_neck (dict, optional): Neck of extracting
             points features. Defaults to None.
+        pts_temporal_encoder (dict, optional): Temporal encoder 
+            for point features. Defaults to None.
         pts_bbox_head (dict, optional): Bboxes head of
             point cloud modality. Defaults to None.
         img_roi_head (dict, optional): RoI head of image
@@ -48,6 +50,7 @@ class CenterPoint(MVXTwoStageDetector):
                  pts_backbone: Optional[dict] = None,
                  img_neck: Optional[dict] = None,
                  pts_neck: Optional[dict] = None,
+                 pts_temporal_encoder: Optional[dict] = None,
                  pts_bbox_head: Optional[dict] = None,
                  img_roi_head: Optional[dict] = None,
                  img_rpn_head: Optional[dict] = None,
@@ -60,6 +63,6 @@ class CenterPoint(MVXTwoStageDetector):
         super(CenterPoint,
               self).__init__(pts_voxel_encoder, pts_middle_encoder,
                              pts_fusion_layer, img_backbone, pts_backbone,
-                             img_neck, pts_neck, pts_bbox_head, img_roi_head,
-                             img_rpn_head, train_cfg, test_cfg, init_cfg,
-                             data_preprocessor, **kwargs)
+                             img_neck, pts_neck, pts_temporal_encoder, pts_bbox_head, 
+                             img_roi_head, img_rpn_head, train_cfg, test_cfg, 
+                             init_cfg, data_preprocessor, **kwargs)

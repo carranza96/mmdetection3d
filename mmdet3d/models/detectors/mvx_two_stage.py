@@ -30,6 +30,8 @@ class MVXTwoStageDetector(Base3DDetector):
             image features. Defaults to None.
         pts_neck (dict, optional): Neck of extracting
             points features. Defaults to None.
+        pts_temporal_encoder (dict, optional): Temporal encoder 
+            for point features. Defaults to None.
         pts_bbox_head (dict, optional): Bboxes head of
             point cloud modality. Defaults to None.
         img_roi_head (dict, optional): RoI head of image
@@ -54,6 +56,7 @@ class MVXTwoStageDetector(Base3DDetector):
                  pts_backbone: Optional[dict] = None,
                  img_neck: Optional[dict] = None,
                  pts_neck: Optional[dict] = None,
+                 pts_temporal_encoder: Optional[dict] = None,
                  pts_bbox_head: Optional[dict] = None,
                  img_roi_head: Optional[dict] = None,
                  img_rpn_head: Optional[dict] = None,
@@ -75,6 +78,8 @@ class MVXTwoStageDetector(Base3DDetector):
             self.pts_fusion_layer = MODELS.build(pts_fusion_layer)
         if pts_neck is not None:
             self.pts_neck = MODELS.build(pts_neck)
+        if pts_temporal_encoder is not None:
+            self.pts_temporal_encoder = MODELS.build(pts_temporal_encoder)
         if pts_bbox_head:
             pts_train_cfg = train_cfg.pts if train_cfg else None
             pts_bbox_head.update(train_cfg=pts_train_cfg)
@@ -137,6 +142,12 @@ class MVXTwoStageDetector(Base3DDetector):
     def with_pts_neck(self):
         """bool: Whether the detector has a neck in 3D detector branch."""
         return hasattr(self, 'pts_neck') and self.pts_neck is not None
+    
+    @property
+    def with_pts_temporal_encoder(self):
+        """bool: Whether the detector has a temporal encoder."""
+        return hasattr(self,
+                       'pts_temporal_encoder') and self.pts_temporal_encoder is not None   
 
     @property
     def with_img_rpn(self):
@@ -246,6 +257,68 @@ class MVXTwoStageDetector(Base3DDetector):
             batch_input_metas=batch_input_metas)
         return (img_feats, pts_feats)
 
+    def extract_feat_temporal(self, batch_inputs_dict: dict,
+                     batch_input_metas: List[dict]) -> tuple:
+        """Extract features from images and points.
+
+        Args:
+            batch_inputs_dict (dict): Dict of batch inputs. It
+                contains
+
+                - points (List[tensor]):  Point cloud of multiple inputs.
+                - imgs (tensor): Image tensor with shape (B, C, H, W).
+            batch_input_metas (list[dict]): Meta information of multiple inputs
+                in a batch.
+
+        Returns:
+             tuple: Two elements in tuple arrange as
+             image features and point cloud features.
+        """
+        voxel_dict = batch_inputs_dict.get('voxels', None)
+        imgs = batch_inputs_dict.get('imgs', None)
+        points = batch_inputs_dict.get('points', None)
+
+        pcs0, pcs1, pcs2 = [], [], []
+        # Chunk sweeps in three groups for each sample within the batch
+        for res in points:
+            ts = res[:,-1].unique()
+
+            if len(ts)==1:  # If there are no previous sweeps, the three timesteps are the current point cloud
+                pcs0.append(res)
+                pcs1.append(res)
+                pcs2.append(res)
+            
+            else:
+                ts_pc0, ts_pc1, ts_pc2 = ts[-4:], ts[-7:-4], ts[:-7]
+                pc0_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc0])
+                pc1_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc1])
+                pc2_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc2])
+
+                pc0, pc1, pc2 = res[pc0_ind],  res[pc1_ind],  res[pc2_ind]
+
+                pcs0.append(pc0)
+                pcs1.append(pc1)
+                pcs2.append(pc2)
+
+        ## TODO: Fix this
+        img_feats, pts_feats = self.extract_feat(batch_inputs_dict0, batch_input_metas0)
+        img_feats1, pts_feats1 = self.extract_feat(batch_inputs_dict1, batch_input_metas1)
+        img_feats2, pts_feats2 = self.extract_feat(batch_inputs_dict2, batch_input_metas2)
+
+        # Create 5-D Tensor (b, t, c, h, w)
+        temp_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
+        pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
+        img_feats = None
+
+        # img_feats = self.extract_img_feat(imgs, batch_input_metas)
+        # pts_feats = self.extract_pts_feat(
+        #     voxel_dict,
+        #     points=points,
+        #     img_feats=img_feats,
+        #     batch_input_metas=batch_input_metas)
+
+        return (img_feats, pts_feats)
+
     def loss(self, batch_inputs_dict: Dict[List, torch.Tensor],
              batch_data_samples: List[Det3DDataSample],
              **kwargs) -> List[Det3DDataSample]:
@@ -267,8 +340,14 @@ class MVXTwoStageDetector(Base3DDetector):
         """
 
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        img_feats, pts_feats = self.extract_feat(batch_inputs_dict,
+
+        if not self.with_pts_temporal_encoder:
+            img_feats, pts_feats = self.extract_feat(batch_inputs_dict,
                                                  batch_input_metas)
+        else:
+            img_feats, pts_feats = self.extract_feat_temporal(batch_inputs_dict,
+                                                 batch_input_metas)
+
         losses = dict()
         if pts_feats:
             losses_pts = self.pts_bbox_head.loss(pts_feats, batch_data_samples,
@@ -386,7 +465,11 @@ class MVXTwoStageDetector(Base3DDetector):
                 contains a tensor with shape (num_instances, 7).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        img_feats, pts_feats = self.extract_feat(batch_inputs_dict,
+        if not self.with_pts_temporal_encoder:
+            img_feats, pts_feats = self.extract_feat(batch_inputs_dict,
+                                                 batch_input_metas)
+        else:
+            img_feats, pts_feats = self.extract_feat_temporal(batch_inputs_dict,
                                                  batch_input_metas)
         if pts_feats and self.with_pts_bbox:
             results_list_3d = self.pts_bbox_head.predict(
