@@ -225,5 +225,14 @@ if __name__ == '__main__':
             'optional': parse_requirements('requirements/optional.txt'),
             'mim': parse_requirements('requirements/mminstall.txt'),
         },
+        ext_modules=[
+            make_cuda_ext(
+                name='iou3d_cuda',
+                module='mmdet3d.ops.iou3d',
+                sources=[
+                    'src/iou3d.cpp',
+                    'src/iou3d_kernel.cu',
+                ]),
+        ],
         cmdclass={'build_ext': BuildExtension},
         zip_safe=False)

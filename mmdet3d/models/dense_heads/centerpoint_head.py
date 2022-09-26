@@ -10,7 +10,8 @@ from mmdet3d.core import (circle_nms, draw_heatmap_gaussian, gaussian_radius,
                           xywhr2xyxyr)
 from mmdet3d.core.post_processing import nms_bev
 from mmdet3d.models import builder
-from mmdet3d.models.utils import clip_sigmoid
+from mmdet3d.models.builder import HEADS, build_loss
+from mmdet3d.ops.iou3d.iou3d_utils import nms_gpu
 from mmdet.core import build_bbox_coder, multi_apply
 from ..builder import HEADS, build_loss
 
@@ -798,11 +799,11 @@ class CenterHead(BaseModule):
                     box_preds[:, :], self.bbox_coder.code_size).bev)
                 # the nms in 3d detection just remove overlap boxes.
 
-                selected = nms_bev(
+                selected = nms_gpu(
                     boxes_for_nms,
                     top_scores,
                     thresh=self.test_cfg['nms_thr'],
-                    pre_max_size=self.test_cfg['pre_max_size'],
+                    pre_maxsize=self.test_cfg['pre_max_size'],
                     post_max_size=self.test_cfg['post_max_size'])
             else:
                 selected = []
