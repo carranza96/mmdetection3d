@@ -141,7 +141,7 @@ class Waymo2KITTI(object):
         for img in frame.images:
             img_path = f'{self.image_save_dir}{str(img.name - 1)}/' + \
                 f'{self.prefix}{str(file_idx).zfill(3)}' + \
-                f'{str(frame_idx).zfill(3)}.jpg'
+                f'{str(frame_idx).zfill(3)}.png'
             img = mmcv.imfrombytes(img.image)
             mmcv.imwrite(img, img_path)
 
