@@ -1,13 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Union
 
+from mmdet.models import BaseDetector
 from mmengine.structures import InstanceData
 
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.det3d_data_sample import (ForwardResults,
                                                   OptSampleList, SampleList)
-from mmdet3d.utils.typing import OptConfigType, OptInstanceList, OptMultiConfig
-from mmdet.models import BaseDetector
+from mmdet3d.utils.typing_utils import (OptConfigType, OptInstanceList,
+                                        OptMultiConfig)
 
 
 @MODELS.register_module()
@@ -89,7 +90,7 @@ class Base3DDetector(BaseDetector):
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
 
-    def convert_to_datasample(
+    def add_pred_to_datasample(
         self,
         data_samples: SampleList,
         data_instances_3d: OptInstanceList = None,

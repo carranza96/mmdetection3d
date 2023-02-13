@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
+from mmdet.models.utils import select_single_mlvl
 from mmengine.config import ConfigDict
 from mmengine.model import BaseModule, constant_init
 from mmengine.structures import InstanceData
@@ -12,8 +13,7 @@ from torch import Tensor
 from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.structures import limit_period, xywhr2xyxyr
 from mmdet3d.structures.det3d_data_sample import SampleList
-from mmdet3d.utils.typing import InstanceList, OptMultiConfig
-from mmdet.models.utils import select_single_mlvl
+from mmdet3d.utils.typing_utils import InstanceList, OptMultiConfig
 
 
 class Base3DDenseHead(BaseModule, metaclass=ABCMeta):
@@ -204,7 +204,7 @@ class Base3DDenseHead(BaseModule, metaclass=ABCMeta):
             score_factors (list[Tensor], optional): Score factor for
                 all scale level, each is a 4D-tensor, has shape
                 (batch_size, num_priors * 1, H, W). Defaults to None.
-            batch_input_metas (list[dict], Optional): Batch image meta info.
+            batch_input_metas (list[dict], Optional): Batch inputs meta info.
                 Defaults to None.
             cfg (ConfigDict, optional): Test / postprocessing
                 configuration, if None, test_cfg would be used.

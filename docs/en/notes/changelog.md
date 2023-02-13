@@ -1,5 +1,123 @@
 # Changelog of v1.1
 
+### v1.1.0rc3 (7/1/2023)
+
+#### Highlights
+
+- Support [CenterFormer](https://arxiv.org/abs/2209.05588) in `projects` (#2175)
+- Support [PETR](https://arxiv.org/abs/2203.05625) in `projects` (#2173)
+
+#### New Features
+
+- Support [CenterFormer](https://arxiv.org/abs/2209.05588) in `projects` (#2175)
+- Support [PETR](https://arxiv.org/abs/2203.05625) in `projects` (#2173)
+- Refactor ImVoxelNet on SUN RGB-D into mmdet3d v1.1 (#2141)
+
+#### Improvements
+
+- Remove legacy builder.py (#2061)
+- Update `customize_dataset` documentation (#2153)
+- Update tutorial of LiDAR-based detection (#2120)
+
+#### Bug Fixes
+
+- Fix the configs of FCOS3D and PGD (#2191)
+- Fix numpy's `ValueError` in update_infos_to_v2.py (#2162)
+- Fix parameter missing in Det3DVisualizationHook (#2118)
+- Fix memory overflow in the rotated box IoU calculation (#2134)
+- Fix lidar2cam error in update_infos_to_v2.py for nus and lyft dataset (#2110)
+- Fix error of data type in Waymo metrics (#2109)
+- Update `bbox_3d` information in `cam_instances` for mono3d detection task (#2046)
+- Fix label saving of Waymo dataset (#2096)
+
+#### Contributors
+
+A total of 10 developers contributed to this release.
+
+@SekiroRong, @ZLTJohn, @vansin, @shanmo, @VVsssssk, @ZCMax, @Xiangxu-0103, @JingweiZhang12, @Tai-Wang, @lianqing11
+
+### v1.1.0rc2 (2/12/2022)
+
+#### Highlights
+
+- Support [PV-RCNN](https://arxiv.org/abs/1912.13192)
+- Speed up evaluation on Waymo dataset
+
+#### New Features
+
+- Support [PV-RCNN](https://arxiv.org/abs/1912.13192) (#1597, #2045)
+- Speed up evaluation on Waymo dataset (#2008)
+- Refactor FCAF3D into the framework of mmdet3d v1.1 (#1945)
+- Refactor S3DIS dataset into the framework of mmdet3d v1.1 (#1984)
+- Add `Projects/` folder and the first example project (#2042)
+
+#### Improvements
+
+- Rename `CLASSES` and `PALETTE` to `classes` and `palette` respectively (#1932)
+- Update `metainfo` in pkl files and add `categories` into metainfo (#1934)
+- Show instance statistics before and after through the pipeline (#1863)
+- Add configs of DGCNN for different testing areas (#1967)
+- Remove testing utils from `tests/utils/` to `mmdet3d/testing/` (#2012)
+- Add typehint for code in `models/layers/` (#2014)
+- Refine documentation (#1891, #1994)
+- Refine voxelization for better speed (#2062)
+
+#### Bug Fixes
+
+- Fix loop visualization error about point cloud (#1914)
+- Fix image conversion of Waymo to avoid information loss (#1979)
+- Fix evaluation on KITTI testset (#2005)
+- Fix sampling bug in `IoUNegPiecewiseSampler` (#2017)
+- Fix point cloud range in CenterPoint (#1998)
+- Fix some loading bugs and support FOV-image-based mode on Waymo dataset (#1942)
+- Fix dataset conversion utils (#1923, #2040, #1971)
+- Update metafiles in all the configs (#2006)
+
+#### Contributors
+
+A total of 12 developers contributed to this release.
+
+@vavanade, @oyel, @thinkthinking, @PeterH0323， @274869388, @cxiang26, @lianqing11, @VVsssssk, @ZCMax, @Xiangxu-0103, @JingweiZhang12, @Tai-Wang
+
+### v1.1.0rc1 (11/10/2022)
+
+#### Highlights
+
+- Support a camera-only 3D detection baseline on Waymo, [MV-FCOS3D++](https://arxiv.org/abs/2207.12716)
+
+#### New Features
+
+- Support a camera-only 3D detection baseline on Waymo, [MV-FCOS3D++](https://arxiv.org/abs/2207.12716), with new evaluation metrics and transformations (#1716)
+- Refactor PointRCNN in the framework of mmdet3d v1.1 (#1819)
+
+#### Improvements
+
+- Add `auto_scale_lr` in config to support training with auto-scale learning rates (#1807)
+- Fix CI (#1813, #1865, #1877)
+- Update `browse_dataset.py` script (#1817)
+- Update SUN RGB-D and Lyft datasets documentation (#1833)
+- Rename `convert_to_datasample` to `add_pred_to_datasample` in detectors (#1843)
+- Update customized dataset documentation (#1845)
+- Update `Det3DLocalVisualization` and visualization documentation (#1857)
+- Add the code of generating `cam_sync_labels` for Waymo dataset (#1870)
+- Update dataset transforms typehints (#1875)
+
+#### Bug Fixes
+
+- Fix missing registration of models in [setup_env.py](https://github.com/open-mmlab/mmdetection3d/blob/dev-1.x/mmdet3d/utils/setup_env.py) (#1808)
+- Fix the data base sampler bugs when using the ground plane data (#1812)
+- Add output directory existing check during visualization (#1828)
+- Fix bugs of nuScenes dataset for monocular 3D detection (#1837)
+- Fix visualization hook to support the visualization of different data modalities (#1839)
+- Fix monocular 3D detection demo (#1864)
+- Fix the lack of `num_pts_feats` key in nuscenes dataset and complete docstring (#1882)
+
+#### Contributors
+
+A total of 10 developers contributed to this release.
+
+@ZwwWayne, @Tai-Wang, @lianqing11, @VVsssssk, @ZCMax, @Xiangxu-0103, @JingweiZhang12, @tpoisonooo, @ice-tong, @jshilong
+
 ### v1.1.0rc0 (1/9/2022)
 
 We are excited to announce the release of MMDetection3D 1.1.0rc0.

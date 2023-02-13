@@ -78,7 +78,7 @@ train_dataloader = dict(
         data_root=data_root,
         ann_file='lyft_infos_train.pkl',
         pipeline=train_pipeline,
-        metainfo=dict(CLASSES=class_names),
+        metainfo=dict(classes=class_names),
         modality=input_modality,
         data_prefix=data_prefix,
         test_mode=False,
@@ -94,7 +94,7 @@ test_dataloader = dict(
         data_root=data_root,
         ann_file='lyft_infos_val.pkl',
         pipeline=test_pipeline,
-        metainfo=dict(CLASSES=class_names),
+        metainfo=dict(classes=class_names),
         modality=input_modality,
         data_prefix=data_prefix,
         test_mode=True,
@@ -110,7 +110,7 @@ val_dataloader = dict(
         data_root=data_root,
         ann_file='lyft_infos_val.pkl',
         pipeline=test_pipeline,
-        metainfo=dict(CLASSES=class_names),
+        metainfo=dict(classes=class_names),
         modality=input_modality,
         test_mode=True,
         data_prefix=data_prefix,
@@ -124,3 +124,7 @@ test_evaluator = dict(
     type='LyftMetric',
     ann_file=data_root + 'lyft_infos_val.pkl',
     metric='bbox')
+
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')

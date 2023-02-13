@@ -8,7 +8,7 @@ _base_ = [
 dataset_type = 'WaymoDataset'
 data_root = 'data/waymo/kitti_format/'
 class_names = ['Car', 'Pedestrian', 'Cyclist']
-metainfo = dict(CLASSES=class_names)
+metainfo = dict(classes=class_names)
 
 point_cloud_range = [-76.8, -51.2, -2, 76.8, 51.2, 4]
 input_modality = dict(use_lidar=True, use_camera=False)
@@ -140,3 +140,8 @@ test_dataloader = dict(
         test_mode=True,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
+# Default setting for scaling LR automatically
+#   - `enable` means enable scaling LR automatically
+#       or not by default.
+#   - `base_batch_size` = (16 GPUs) x (2 samples per GPU).
+auto_scale_lr = dict(enable=False, base_batch_size=32)

@@ -67,12 +67,10 @@ def init_model(config: Union[str, Path, Config],
 
     if checkpoint is not None:
         checkpoint = load_checkpoint(model, checkpoint, map_location='cpu')
-
-        dataset_meta = checkpoint['meta'].get('dataset_meta', None)
         # save the dataset_meta in the model for convenience
         if 'dataset_meta' in checkpoint.get('meta', {}):
             # mmdet3d 1.x
-            model.dataset_meta = dataset_meta
+            model.dataset_meta = checkpoint['meta']['dataset_meta']
         elif 'CLASSES' in checkpoint.get('meta', {}):
             # < mmdet3d 1.x
             classes = checkpoint['meta']['CLASSES']
@@ -143,6 +141,7 @@ def inference_detector(model: nn.Module,
             # load from point cloud file
             data_ = dict(
                 lidar_points=dict(lidar_path=pcd),
+                timestamp=1,
                 # for ScanNet demo we need axis_align_matrix
                 axis_align_matrix=np.eye(4),
                 box_type_3d=box_type_3d,
@@ -151,6 +150,7 @@ def inference_detector(model: nn.Module,
             # directly use loaded point cloud
             data_ = dict(
                 points=pcd,
+                timestamp=1,
                 # for ScanNet demo we need axis_align_matrix
                 axis_align_matrix=np.eye(4),
                 box_type_3d=box_type_3d,

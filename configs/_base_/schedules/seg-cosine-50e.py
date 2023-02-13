@@ -16,6 +16,12 @@ param_scheduler = [
 ]
 
 # runtime settings
-train_cfg = dict(by_epoch=True, max_epochs=50)
-val_cfg = dict(interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=50, val_interval=1)
+val_cfg = dict()
 test_cfg = dict()
+
+# Default setting for scaling LR automatically
+#   - `enable` means enable scaling LR automatically
+#       or not by default.
+#   - `base_batch_size` = (2 GPUs) x (16 samples per GPU).
+auto_scale_lr = dict(enable=False, base_batch_size=32)

@@ -3,7 +3,7 @@ class_names = ('wall', 'floor', 'cabinet', 'bed', 'chair', 'sofa', 'table',
                'door', 'window', 'bookshelf', 'picture', 'counter', 'desk',
                'curtain', 'refrigerator', 'showercurtrain', 'toilet', 'sink',
                'bathtub', 'otherfurniture')
-metainfo = dict(CLASSES=class_names)
+metainfo = dict(classes=class_names)
 dataset_type = 'ScanNetSegDataset'
 data_root = 'data/scannet/'
 input_modality = dict(use_lidar=True, use_camera=False)
@@ -137,3 +137,7 @@ val_dataloader = test_dataloader
 
 val_evaluator = dict(type='SegMetric')
 test_evaluator = val_evaluator
+
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
