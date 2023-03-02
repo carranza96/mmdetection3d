@@ -4,6 +4,8 @@ from typing import List, Optional, Tuple
 import numpy as np
 import torch
 from mmcv.cnn import Scale
+from mmdet.models.utils import multi_apply
+from mmdet.structures.bbox import distance2bbox
 from mmengine.model import bias_init_with_prob, normal_init
 from mmengine.structures import InstanceData
 from torch import Tensor
@@ -13,10 +15,8 @@ from torch.nn import functional as F
 from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import points_cam2img, points_img2cam, xywhr2xyxyr
-from mmdet3d.utils.typing import (ConfigType, InstanceList, OptConfigType,
-                                  OptInstanceList)
-from mmdet.models.utils import multi_apply
-from mmdet.structures.bbox import distance2bbox
+from mmdet3d.utils.typing_utils import (ConfigType, InstanceList,
+                                        OptConfigType, OptInstanceList)
 from .fcos_mono3d_head import FCOSMono3DHead
 
 

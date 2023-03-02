@@ -28,7 +28,7 @@ def _generate_kitti_dataset_config():
                 gt_instances_3d = InstanceData()
                 gt_instances_3d.labels_3d = info['gt_labels_3d']
                 data_sample.gt_instances_3d = gt_instances_3d
-                info['data_sample'] = data_sample
+                info['data_samples'] = data_sample
                 return info
 
     pipeline = [
@@ -54,7 +54,7 @@ def test_getitem():
             img='training/image_2',
         ),
         pipeline=pipeline,
-        metainfo=dict(CLASSES=classes),
+        metainfo=dict(classes=classes),
         modality=modality)
 
     kitti_dataset.prepare_data(0)
@@ -82,9 +82,9 @@ def test_getitem():
     assert torch.allclose(ann_info['gt_bboxes_3d'].tensor.sum(),
                           torch.tensor(7.2650))
     assert 'centers_2d' in ann_info
-    assert ann_info['centers_2d'].dtype == np.float64
+    assert ann_info['centers_2d'].dtype == np.float32
     assert 'depths' in ann_info
-    assert ann_info['depths'].dtype == np.float64
+    assert ann_info['depths'].dtype == np.float32
 
     car_kitti_dataset = KittiDataset(
         data_root,
@@ -94,7 +94,7 @@ def test_getitem():
             img='training/image_2',
         ),
         pipeline=pipeline,
-        metainfo=dict(CLASSES=['Car']),
+        metainfo=dict(classes=['Car']),
         modality=modality)
 
     input_dict = car_kitti_dataset.get_data_info(0)
@@ -105,4 +105,4 @@ def test_getitem():
     assert ann_info['gt_labels_3d'].dtype == np.int64
     # all instance have been filtered by classes
     assert len(ann_info['gt_labels_3d']) == 0
-    assert len(car_kitti_dataset.metainfo['CLASSES']) == 1
+    assert len(car_kitti_dataset.metainfo['classes']) == 1

@@ -2,7 +2,7 @@ dataset_type = 'KittiDataset'
 data_root = 'data/kitti/'
 class_names = ['Pedestrian', 'Cyclist', 'Car']
 input_modality = dict(use_lidar=False, use_camera=True)
-metainfo = dict(CLASSES=class_names)
+metainfo = dict(classes=class_names)
 
 file_client_args = dict(backend='disk')
 # Uncomment the following if use ceph or other file clients.
@@ -35,6 +35,10 @@ test_pipeline = [
     dict(type='Resize', scale=(1242, 375), keep_ratio=True),
     dict(type='Pack3DDetInputs', keys=['img'])
 ]
+eval_pipeline = [
+    dict(type='LoadImageFromFileMono3D'),
+    dict(type='Pack3DDetInputs', keys=['img'])
+]
 
 train_dataloader = dict(
     batch_size=2,
@@ -48,6 +52,7 @@ train_dataloader = dict(
         data_prefix=dict(img='training/image_2'),
         pipeline=train_pipeline,
         modality=input_modality,
+        load_type='fov_image_based',
         test_mode=False,
         metainfo=metainfo,
         # we use box_type_3d='Camera' in monocular 3d
@@ -66,6 +71,7 @@ val_dataloader = dict(
         ann_file='kitti_infos_val.pkl',
         pipeline=test_pipeline,
         modality=input_modality,
+        load_type='fov_image_based',
         metainfo=metainfo,
         test_mode=True,
         box_type_3d='Camera'))
@@ -78,3 +84,7 @@ val_evaluator = dict(
     pred_box_type_3d='Camera')
 
 test_evaluator = val_evaluator
+
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')

@@ -2,16 +2,18 @@
 from typing import List, Tuple, Union
 
 import torch
+from mmengine.structures import InstanceData
 
+from mmdet3d.models.detectors import Base3DDetector
 from mmdet3d.models.layers.fusion_layers.point_fusion import point_sample
 from mmdet3d.registry import MODELS, TASK_UTILS
+from mmdet3d.structures.bbox_3d import get_proj_mat_by_coord_type
 from mmdet3d.structures.det3d_data_sample import SampleList
-from mmdet3d.utils import ConfigType, InstanceList, OptConfigType
-from mmdet.models.detectors import BaseDetector
+from mmdet3d.utils import ConfigType, OptConfigType, OptInstanceList
 
 
 @MODELS.register_module()
-class ImVoxelNet(BaseDetector):
+class ImVoxelNet(Base3DDetector):
     r"""`ImVoxelNet <https://arxiv.org/abs/2106.01178>`_.
 
     Args:
@@ -19,9 +21,11 @@ class ImVoxelNet(BaseDetector):
         neck (:obj:`ConfigDict` or dict): The neck config.
         neck_3d (:obj:`ConfigDict` or dict): The 3D neck config.
         bbox_head (:obj:`ConfigDict` or dict): The bbox head config.
+        prior_generator (:obj:`ConfigDict` or dict): The prior points
+            generator config.
         n_voxels (list): Number of voxels along x, y, z axis.
-        anchor_generator (:obj:`ConfigDict` or dict): The anchor generator
-            config.
+        coord_type (str): The type of coordinates of points cloud:
+            'DEPTH', 'LIDAR', or 'CAMERA'.
         train_cfg (:obj:`ConfigDict` or dict, optional): Config dict of
             training hyper-parameters. Defaults to None.
         test_cfg (:obj:`ConfigDict` or dict, optional): Config dict of test
@@ -38,8 +42,9 @@ class ImVoxelNet(BaseDetector):
                  neck: ConfigType,
                  neck_3d: ConfigType,
                  bbox_head: ConfigType,
+                 prior_generator: ConfigType,
                  n_voxels: List,
-                 anchor_generator: ConfigType,
+                 coord_type: str,
                  train_cfg: OptConfigType = None,
                  test_cfg: OptConfigType = None,
                  data_preprocessor: OptConfigType = None,
@@ -52,39 +57,17 @@ class ImVoxelNet(BaseDetector):
         bbox_head.update(train_cfg=train_cfg)
         bbox_head.update(test_cfg=test_cfg)
         self.bbox_head = MODELS.build(bbox_head)
+        self.prior_generator = TASK_UTILS.build(prior_generator)
         self.n_voxels = n_voxels
-        self.anchor_generator = TASK_UTILS.build(anchor_generator)
+        self.coord_type = coord_type
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
-
-    def convert_to_datasample(self, data_samples: SampleList,
-                              data_instances: InstanceList) -> SampleList:
-        """ Convert results list to `Det3DDataSample`.
-        Args:
-            inputs (list[:obj:`Det3DDataSample`]): The input data.
-            data_instances (list[:obj:`InstanceData`]): 3D Detection
-                results of each image.
-        Returns:
-            list[:obj:`Det3DDataSample`]: 3D Detection results of the
-            input images. Each Det3DDataSample usually contain
-            'pred_instances_3d'. And the ``pred_instances_3d`` usually
-            contains following keys.
-
-                - scores_3d (Tensor): Classification scores, has a shape
-                    (num_instance, )
-                - labels_3d (Tensor): Labels of bboxes, has a shape
-                    (num_instances, ).
-                - bboxes_3d (Tensor): Contains a tensor with shape
-                    (num_instances, C) where C >=7.
-            """
-        for data_sample, pred_instances_3d in zip(data_samples,
-                                                  data_instances):
-            data_sample.pred_instances_3d = pred_instances_3d
-        return data_samples
 
     def extract_feat(self, batch_inputs_dict: dict,
                      batch_data_samples: SampleList):
         """Extract 3d features from the backbone -> fpn -> 3d projection.
+
+        -> 3d neck -> bbox_head.
 
         Args:
             batch_inputs_dict (dict): The model input dict which include
@@ -96,7 +79,9 @@ class ImVoxelNet(BaseDetector):
                 as `gt_instance` or `gt_panoptic_seg` or `gt_sem_seg`.
 
         Returns:
-            torch.Tensor: of shape (N, C_out, N_x, N_y, N_z)
+            Tuple:
+            - torch.Tensor: Features of shape (N, C_out, N_x, N_y, N_z).
+            - torch.Tensor: Valid mask of shape (N, 1, N_x, N_y, N_z).
         """
         img = batch_inputs_dict['imgs']
         batch_img_metas = [
@@ -104,9 +89,9 @@ class ImVoxelNet(BaseDetector):
         ]
         x = self.backbone(img)
         x = self.neck(x)[0]
-        points = self.anchor_generator.grid_anchors(
-            [self.n_voxels[::-1]], device=img.device)[0][:, :3]
-        volumes = []
+        points = self.prior_generator.grid_anchors([self.n_voxels[::-1]],
+                                                   device=img.device)[0][:, :3]
+        volumes, valid_preds = [], []
         for feature, img_meta in zip(x, batch_img_metas):
             img_scale_factor = (
                 points.new_tensor(img_meta['scale_factor'][:2])
@@ -115,13 +100,14 @@ class ImVoxelNet(BaseDetector):
             img_crop_offset = (
                 points.new_tensor(img_meta['img_crop_offset'])
                 if 'img_crop_offset' in img_meta.keys() else 0)
-            lidar2img = points.new_tensor(img_meta['lidar2img'])
+            proj_mat = points.new_tensor(
+                get_proj_mat_by_coord_type(img_meta, self.coord_type))
             volume = point_sample(
                 img_meta,
                 img_features=feature[None, ...],
                 points=points,
-                proj_mat=lidar2img,
-                coord_type='LIDAR',
+                proj_mat=points.new_tensor(proj_mat),
+                coord_type=self.coord_type,
                 img_scale_factor=img_scale_factor,
                 img_crop_offset=img_crop_offset,
                 img_flip=img_flip,
@@ -130,9 +116,11 @@ class ImVoxelNet(BaseDetector):
                 aligned=False)
             volumes.append(
                 volume.reshape(self.n_voxels[::-1] + [-1]).permute(3, 2, 1, 0))
+            valid_preds.append(
+                ~torch.all(volumes[-1] == 0, dim=0, keepdim=True))
         x = torch.stack(volumes)
         x = self.neck_3d(x)
-        return x
+        return x, torch.stack(valid_preds).float()
 
     def loss(self, batch_inputs_dict: dict, batch_data_samples: SampleList,
              **kwargs) -> Union[dict, list]:
@@ -150,8 +138,12 @@ class ImVoxelNet(BaseDetector):
         Returns:
             dict: A dictionary of loss components.
         """
-
-        x = self.extract_feat(batch_inputs_dict, batch_data_samples)
+        x, valid_preds = self.extract_feat(batch_inputs_dict,
+                                           batch_data_samples)
+        # For indoor datasets ImVoxelNet uses ImVoxelHead that handles
+        # mask of visible voxels.
+        if self.coord_type == 'DEPTH':
+            x += (valid_preds, )
         losses = self.bbox_head.loss(x, batch_data_samples, **kwargs)
         return losses
 
@@ -183,10 +175,16 @@ class ImVoxelNet(BaseDetector):
                 - bboxes_3d (Tensor): Contains a tensor with shape
                     (num_instances, C) where C >=7.
         """
-        x = self.extract_feat(batch_inputs_dict, batch_data_samples)
-        results_list = self.bbox_head.predict(x, batch_data_samples, **kwargs)
-        predictions = self.convert_to_datasample(batch_data_samples,
-                                                 results_list)
+        x, valid_preds = self.extract_feat(batch_inputs_dict,
+                                           batch_data_samples)
+        # For indoor datasets ImVoxelNet uses ImVoxelHead that handles
+        # mask of visible voxels.
+        if self.coord_type == 'DEPTH':
+            x += (valid_preds, )
+        results_list = \
+            self.bbox_head.predict(x, batch_data_samples, **kwargs)
+        predictions = self.add_pred_to_datasample(batch_data_samples,
+                                                  results_list)
         return predictions
 
     def _forward(self, batch_inputs_dict: dict, batch_data_samples: SampleList,
@@ -206,6 +204,72 @@ class ImVoxelNet(BaseDetector):
         Returns:
             tuple[list]: A tuple of features from ``bbox_head`` forward.
         """
-        x = self.extract_feat(batch_inputs_dict, batch_data_samples)
+        x, valid_preds = self.extract_feat(batch_inputs_dict,
+                                           batch_data_samples)
+        # For indoor datasets ImVoxelNet uses ImVoxelHead that handles
+        # mask of visible voxels.
+        if self.coord_type == 'DEPTH':
+            x += (valid_preds, )
         results = self.bbox_head.forward(x)
         return results
+
+    def convert_to_datasample(
+        self,
+        data_samples: SampleList,
+        data_instances_3d: OptInstanceList = None,
+        data_instances_2d: OptInstanceList = None,
+    ) -> SampleList:
+        """Convert results list to `Det3DDataSample`.
+
+        Subclasses could override it to be compatible for some multi-modality
+        3D detectors.
+
+        Args:
+            data_samples (list[:obj:`Det3DDataSample`]): The input data.
+            data_instances_3d (list[:obj:`InstanceData`], optional): 3D
+                Detection results of each sample.
+            data_instances_2d (list[:obj:`InstanceData`], optional): 2D
+                Detection results of each sample.
+
+        Returns:
+            list[:obj:`Det3DDataSample`]: Detection results of the
+            input. Each Det3DDataSample usually contains
+            'pred_instances_3d'. And the ``pred_instances_3d`` normally
+            contains following keys.
+
+            - scores_3d (Tensor): Classification scores, has a shape
+              (num_instance, )
+            - labels_3d (Tensor): Labels of 3D bboxes, has a shape
+              (num_instances, ).
+            - bboxes_3d (Tensor): Contains a tensor with shape
+              (num_instances, C) where C >=7.
+
+            When there are image prediction in some models, it should
+            contains  `pred_instances`, And the ``pred_instances`` normally
+            contains following keys.
+
+            - scores (Tensor): Classification scores of image, has a shape
+              (num_instance, )
+            - labels (Tensor): Predict Labels of 2D bboxes, has a shape
+              (num_instances, ).
+            - bboxes (Tensor): Contains a tensor with shape
+              (num_instances, 4).
+        """
+
+        assert (data_instances_2d is not None) or \
+               (data_instances_3d is not None),\
+               'please pass at least one type of data_samples'
+
+        if data_instances_2d is None:
+            data_instances_2d = [
+                InstanceData() for _ in range(len(data_instances_3d))
+            ]
+        if data_instances_3d is None:
+            data_instances_3d = [
+                InstanceData() for _ in range(len(data_instances_2d))
+            ]
+
+        for i, data_sample in enumerate(data_samples):
+            data_sample.pred_instances_3d = data_instances_3d[i]
+            data_sample.pred_instances = data_instances_2d[i]
+        return data_samples

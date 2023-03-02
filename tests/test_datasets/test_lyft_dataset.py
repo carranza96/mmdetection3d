@@ -21,12 +21,12 @@ def _generate_nus_dataset_config():
         class Identity(BaseTransform):
 
             def transform(self, info):
-                packed_input = dict(data_sample=Det3DDataSample())
+                packed_input = dict(data_samples=Det3DDataSample())
                 if 'ann_info' in info:
-                    packed_input['data_sample'].gt_instances_3d = InstanceData(
-                    )
                     packed_input[
-                        'data_sample'].gt_instances_3d.labels_3d = info[
+                        'data_samples'].gt_instances_3d = InstanceData()
+                    packed_input[
+                        'data_samples'].gt_instances_3d.labels_3d = info[
                             'ann_info']['gt_labels_3d']
                 return packed_input
 
@@ -48,15 +48,14 @@ def test_getitem():
         ann_file,
         data_prefix=data_prefix,
         pipeline=pipeline,
-        metainfo=dict(CLASSES=classes),
+        metainfo=dict(classes=classes),
         modality=modality)
 
     lyft_dataset.prepare_data(0)
     input_dict = lyft_dataset.get_data_info(0)
     # assert the the path should contains data_prefix and data_root
-    assert input_dict['lidar_points'][
-        'lidar_path'] == 'tests/data/lyft/lidar/host-a017_lidar1_' \
-                         '1236118886901125926.bin'
+    assert data_prefix['pts'] in input_dict['lidar_points']['lidar_path']
+    assert data_root in input_dict['lidar_points']['lidar_path']
 
     ann_info = lyft_dataset.parse_ann_info(input_dict)
 
@@ -68,4 +67,4 @@ def test_getitem():
     assert 'gt_bboxes_3d' in ann_info
     assert isinstance(ann_info['gt_bboxes_3d'], LiDARInstance3DBoxes)
 
-    assert len(lyft_dataset.metainfo['CLASSES']) == 9
+    assert len(lyft_dataset.metainfo['classes']) == 9

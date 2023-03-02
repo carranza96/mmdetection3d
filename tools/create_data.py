@@ -35,9 +35,6 @@ def kitti_data_prep(root_path,
     info_train_path = osp.join(out_dir, f'{info_prefix}_infos_train.pkl')
     info_val_path = osp.join(out_dir, f'{info_prefix}_infos_val.pkl')
     info_trainval_path = osp.join(out_dir, f'{info_prefix}_infos_trainval.pkl')
-    kitti.export_2d_annotation(root_path, info_train_path)
-    kitti.export_2d_annotation(root_path, info_val_path)
-    kitti.export_2d_annotation(root_path, info_trainval_path)
     update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_train_path)
     update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_val_path)
     update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_trainval_path)
@@ -76,17 +73,11 @@ def nuscenes_data_prep(root_path,
 
     if version == 'v1.0-test':
         info_test_path = osp.join(out_dir, f'{info_prefix}_infos_test.pkl')
-        nuscenes_converter.export_2d_annotation(
-            root_path, info_test_path, version=version)
         update_pkl_infos('nuscenes', out_dir=out_dir, pkl_path=info_test_path)
         return
 
     info_train_path = osp.join(out_dir, f'{info_prefix}_infos_train.pkl')
     info_val_path = osp.join(out_dir, f'{info_prefix}_infos_val.pkl')
-    nuscenes_converter.export_2d_annotation(
-        root_path, info_train_path, version=version)
-    nuscenes_converter.export_2d_annotation(
-        root_path, info_val_path, version=version)
     update_pkl_infos('nuscenes', out_dir=out_dir, pkl_path=info_train_path)
     update_pkl_infos('nuscenes', out_dir=out_dir, pkl_path=info_val_path)
     create_groundtruth_database(dataset_name, root_path, info_prefix,
@@ -191,7 +182,9 @@ def waymo_data_prep(root_path,
     """
     from tools.dataset_converters import waymo_converter as waymo
 
-    splits = ['training', 'validation', 'testing']
+    splits = [
+        'training', 'validation', 'testing', 'testing_3d_camera_only_detection'
+    ]
     for i, split in enumerate(splits):
         load_dir = osp.join(root_path, 'waymo_format', split)
         if split == 'validation':
@@ -203,7 +196,8 @@ def waymo_data_prep(root_path,
             save_dir,
             prefix=str(i),
             workers=workers,
-            test_mode=(split == 'testing'))
+            test_mode=(split
+                       in ['testing', 'testing_3d_camera_only_detection']))
         converter.convert()
     # Generate waymo infos
     out_dir = osp.join(out_dir, 'kitti_format')
@@ -212,14 +206,14 @@ def waymo_data_prep(root_path,
     info_train_path = osp.join(out_dir, f'{info_prefix}_infos_train.pkl')
     info_val_path = osp.join(out_dir, f'{info_prefix}_infos_val.pkl')
     info_trainval_path = osp.join(out_dir, f'{info_prefix}_infos_trainval.pkl')
-    update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_train_path)
-    update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_val_path)
-    update_pkl_infos('kitti', out_dir=out_dir, pkl_path=info_trainval_path)
+    update_pkl_infos('waymo', out_dir=out_dir, pkl_path=info_train_path)
+    update_pkl_infos('waymo', out_dir=out_dir, pkl_path=info_val_path)
+    update_pkl_infos('waymo', out_dir=out_dir, pkl_path=info_trainval_path)
     GTDatabaseCreater(
         'WaymoDataset',
         out_dir,
         info_prefix,
-        f'{out_dir}/{info_prefix}_infos_train.pkl',
+        f'{info_prefix}_infos_train.pkl',
         relative_path=False,
         with_mask=False,
         num_worker=workers).create()
@@ -262,6 +256,11 @@ args = parser.parse_args()
 if __name__ == '__main__':
     from mmdet3d.utils import register_all_modules
     register_all_modules()
+
+    # Set to spawn mode to avoid stuck when process dataset creating
+    import multiprocessing
+    multiprocessing.set_start_method('spawn')
+
     if args.dataset == 'kitti':
         kitti_data_prep(
             root_path=args.root_path,

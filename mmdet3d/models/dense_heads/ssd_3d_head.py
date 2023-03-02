@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 from mmcv.ops.nms import batched_nms
+from mmdet.models.utils import multi_apply
 from mmengine import ConfigDict
 from mmengine.structures import InstanceData
 from torch import Tensor
@@ -13,8 +14,6 @@ from mmdet3d.structures import BaseInstance3DBoxes
 from mmdet3d.structures.bbox_3d import (DepthInstance3DBoxes,
                                         LiDARInstance3DBoxes,
                                         rotation_3d_in_axis)
-from mmdet.models.utils import multi_apply
-from ..builder import build_loss
 from .vote_head import VoteHead
 
 
@@ -76,8 +75,8 @@ class SSD3DHead(VoteHead):
             size_res_loss=size_res_loss,
             semantic_loss=None,
             init_cfg=init_cfg)
-        self.corner_loss = build_loss(corner_loss)
-        self.vote_loss = build_loss(vote_loss)
+        self.corner_loss = MODELS.build(corner_loss)
+        self.vote_loss = MODELS.build(vote_loss)
         self.num_candidates = vote_module_cfg['num_points']
 
     def _get_cls_out_channels(self) -> int:

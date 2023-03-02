@@ -21,12 +21,12 @@ def _generate_nus_dataset_config():
         class Identity(BaseTransform):
 
             def transform(self, info):
-                packed_input = dict(data_sample=Det3DDataSample())
+                packed_input = dict(data_samples=Det3DDataSample())
                 if 'ann_info' in info:
-                    packed_input['data_sample'].gt_instances_3d = InstanceData(
-                    )
                     packed_input[
-                        'data_sample'].gt_instances_3d.labels_3d = info[
+                        'data_samples'].gt_instances_3d = InstanceData()
+                    packed_input[
+                        'data_samples'].gt_instances_3d.labels_3d = info[
                             'ann_info']['gt_labels_3d']
                 return packed_input
 
@@ -51,17 +51,15 @@ def test_getitem():
         ann_file=ann_file,
         data_prefix=data_prefix,
         pipeline=pipeline,
-        metainfo=dict(CLASSES=classes),
+        metainfo=dict(classes=classes),
         modality=modality)
 
     nus_dataset.prepare_data(0)
     input_dict = nus_dataset.get_data_info(0)
     # assert the the path should contains data_prefix and data_root
     assert data_prefix['pts'] in input_dict['lidar_points']['lidar_path']
-    assert input_dict['lidar_points'][
-        'lidar_path'] == 'tests/data/nuscenes/samples/LIDAR_TOP/' \
-                         'n015-2018-08-02-17-16-37+0800__LIDAR_TOP__' \
-                         '1533201470948018.pcd.bin'
+    assert data_root in input_dict['lidar_points']['lidar_path']
+
     for cam_id, img_info in input_dict['images'].items():
         if 'img_path' in img_info:
             assert data_prefix['img'] in img_info['img_path']
@@ -77,7 +75,7 @@ def test_getitem():
     assert 'gt_bboxes_3d' in ann_info
     assert isinstance(ann_info['gt_bboxes_3d'], LiDARInstance3DBoxes)
 
-    assert len(nus_dataset.metainfo['CLASSES']) == 10
+    assert len(nus_dataset.metainfo['classes']) == 10
 
     assert input_dict['token'] == 'fd8420396768425eabec9bdddf7e64b6'
     assert input_dict['timestamp'] == 1533201470.448696
