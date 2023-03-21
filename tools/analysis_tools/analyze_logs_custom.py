@@ -5,6 +5,7 @@ import numpy as np
 import seaborn as sns
 from collections import defaultdict
 from matplotlib import pyplot as plt
+import scienceplots
 plt.style.use(['science', 'ieee'])
 
 

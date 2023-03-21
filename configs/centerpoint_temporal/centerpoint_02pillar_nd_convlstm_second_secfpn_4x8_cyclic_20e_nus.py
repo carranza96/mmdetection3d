@@ -13,7 +13,6 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 
-
 model = dict(
     pts_voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
@@ -80,13 +79,13 @@ train_pipeline = [
         file_client_args=file_client_args),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=9,
+        sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
         pad_empty_sweeps=True,
         remove_close=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    # dict(type='ObjectSample', db_sampler=db_sampler),
+    dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.3925, 0.3925],
@@ -113,11 +112,12 @@ test_pipeline = [
         file_client_args=file_client_args),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=9,
+        sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
         pad_empty_sweeps=True,
-        remove_close=True),
+        remove_close=True,
+        test_mode=True),
     dict(
         type='MultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -130,8 +130,6 @@ test_pipeline = [
                 scale_ratio_range=[1., 1.],
                 translation_std=[0, 0, 0]),
             dict(type='RandomFlip3D'),
-            dict(
-                type='PointsRangeFilter', point_cloud_range=point_cloud_range),
             dict(
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
@@ -150,7 +148,7 @@ eval_pipeline = [
         file_client_args=file_client_args),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=9,
+        sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
         pad_empty_sweeps=True,
@@ -177,18 +175,7 @@ data = dict(
             # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
             # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='LiDAR')),
-    # train=dict(
-    #     type=dataset_type,
-    #     data_root=data_root,
-    #     ann_file=data_root + 'nuscenes_infos_train.pkl',
-    #     pipeline=train_pipeline,
-    #     classes=class_names,
-    #     test_mode=False,
-    #     # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
-    #     # and box_type_3d='Depth' in sunrgbd and scannet dataset.
-    #     box_type_3d='LiDAR'),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
-    
+
 evaluation = dict(interval=1, pipeline=eval_pipeline)
-# runner = dict(type='EpochBasedRunner', max_epochs=30)

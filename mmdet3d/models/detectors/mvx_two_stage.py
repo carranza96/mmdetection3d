@@ -415,7 +415,7 @@ class MVXTwoStageDetector(Base3DDetector):
         return bbox_results
 
     
-    def extract_feat_temporal(self, points, img, img_metas):
+    def extract_feat_temporal_old(self, points, img, img_metas):
         
         pcs0, pcs1, pcs2 = [], [], []
         # Chunk sweeps in three groups for each sample within the batch
@@ -452,6 +452,42 @@ class MVXTwoStageDetector(Base3DDetector):
 
         # Create 5-D Tensor (b, t, c, h, w)
         temp_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
+        pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
+        img_feats = None
+
+        return img_feats, pts_feats
+
+
+    def extract_feat_temporal(self, points, img, img_metas):
+        
+        # Chunk sweeps in three groups for each sample within the batch
+        chunks = 3
+        pts_list = [[] for _ in range(chunks)]
+        for res in points:
+            ts = res[:,-1].unique()
+            ts_r = res[:,-1].round(decimals=2).unique()  
+            chunk_split = 0.5/chunks
+
+            for i in range(chunks):
+                # If there are no previous sweeps, the three timesteps are the current point cloud
+                if len(ts)==1:
+                    pc = res
+                    pts_list[i].append(pc)
+                else:
+                    ts_lb, ts_ub = chunk_split*(i), chunk_split*(i+1) if i<chunks-1 else 1.
+                    pc = res[(res[:,-1]>=ts_lb) & (res[:,-1]<=ts_ub)]
+                    ts = pc[:,-1].round(decimals=2).unique()
+                    # print(ts)
+                    pts_list[i].append(pc)
+               
+        pts_feats_list = []
+        for pts in pts_list:
+            img_feats, pts_feats = self.extract_feat(
+                pts, img=img, img_metas=img_metas)
+            pts_feats_list.append(pts_feats[0])
+
+        # Create 5-D Tensor (b, t, c, h, w)
+        temp_input = torch.stack(pts_feats_list).transpose(0,1)
         pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
         img_feats = None
 
