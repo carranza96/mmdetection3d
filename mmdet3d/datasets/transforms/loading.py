@@ -294,7 +294,8 @@ class LoadPointsFromMultiSweeps(BaseTransform):
                  file_client_args: dict = dict(backend='disk'),
                  pad_empty_sweeps: bool = False,
                  remove_close: bool = False,
-                 test_mode: bool = False) -> None:
+                 test_mode: bool = False,
+                 norm_intensity: bool = False) -> None:
         self.load_dim = load_dim
         self.sweeps_num = sweeps_num
         self.use_dim = use_dim
@@ -303,6 +304,7 @@ class LoadPointsFromMultiSweeps(BaseTransform):
         self.pad_empty_sweeps = pad_empty_sweeps
         self.remove_close = remove_close
         self.test_mode = test_mode
+        self.norm_intensity = norm_intensity
 
     def _load_points(self, pts_filename: str) -> np.ndarray:
         """Private function to load point clouds data.
@@ -365,7 +367,7 @@ class LoadPointsFromMultiSweeps(BaseTransform):
                   cloud arrays.
         """
         points = results['points']
-        points.tensor[:, 4] = 0
+        points.tensor[:, -1] = 0
         sweep_points_list = [points]
         ts = results['timestamp']
         if 'lidar_sweeps' not in results:
@@ -390,15 +392,37 @@ class LoadPointsFromMultiSweeps(BaseTransform):
                 points_sweep = self._load_points(
                     sweep['lidar_points']['lidar_path'])
                 points_sweep = np.copy(points_sweep).reshape(-1, self.load_dim)
+                
+                if self.norm_intensity:
+                    assert len(self.use_dim) >= 4, \
+                    f'When using intensity norm, expect used dimensions >= 4, got {len(self.use_dim)}'  # noqa: E501
+                    points_sweep[:, 3] = np.tanh(points_sweep[:, 3])
+                    
                 if self.remove_close:
                     points_sweep = self._remove_close(points_sweep)
                 # bc-breaking: Timestamp has divided 1e6 in pkl infos.
                 sweep_ts = sweep['timestamp']
-                lidar2sensor = np.array(sweep['lidar_points']['lidar2sensor'])
-                points_sweep[:, :
-                             3] = points_sweep[:, :3] @ lidar2sensor[:3, :3]
-                points_sweep[:, :3] -= lidar2sensor[:3, 3]
-                points_sweep[:, 4] = ts - sweep_ts
+                
+                if 'ego2global' in sweep:
+                    curr_pose = results['ego2global']
+                    past_pose = sweep['ego2global']
+                    past2world_rot = past_pose[0:3, 0:3]
+                    past2world_trans = past_pose[0:3, 3]
+                    world2curr_pose = np.linalg.inv(curr_pose)
+                    world2curr_rot = world2curr_pose[0:3, 0:3]
+                    world2curr_trans = world2curr_pose[0:3, 3]
+                    past_points = points_sweep[:, :3]
+                    past_pc_in_world = np.einsum('ij,nj->ni', past2world_rot, past_points) + past2world_trans[None, :]
+                    past_pc_in_curr = np.einsum('ij,nj->ni', world2curr_rot, past_pc_in_world) + world2curr_trans[None, :]
+                    points_sweep[:, :3] = past_pc_in_curr
+                    points_sweep[:, -1] = (ts - sweep_ts)/1e6
+                else:
+                    lidar2sensor = np.array(sweep['lidar_points']['lidar2sensor'])
+                    points_sweep[:, :
+                                3] = points_sweep[:, :3] @ lidar2sensor[:3, :3]
+                    points_sweep[:, :3] -= lidar2sensor[:3, 3]
+                    points_sweep[:, -1] = ts - sweep_ts
+                    
                 points_sweep = points.new_point(points_sweep)
                 sweep_points_list.append(points_sweep)
 
