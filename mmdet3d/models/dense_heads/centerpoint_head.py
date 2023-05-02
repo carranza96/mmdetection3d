@@ -733,8 +733,6 @@ class CenterHead(BaseModule):
                   the last 2 dimensions of 9 is
                   velocity.
         """
-        if batch_input_metas[0]['lidar_path']=='/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/training/velodyne/1084000.bin':
-            print()
         rets = []
         for task_id, preds_dict in enumerate(preds_dicts):
             num_class_with_bg = self.num_classes[task_id]

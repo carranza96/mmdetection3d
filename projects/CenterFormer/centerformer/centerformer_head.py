@@ -295,8 +295,6 @@ class CenterFormerBboxHead(nn.Module):
 
         Additionally support double flip testing
         """
-        if batch_input_metas[0]['lidar_path']=='/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/training/velodyne/1084000.bin':
-            print()
         rets = []
 
         post_center_range = self.test_cfg.post_center_limit_range
