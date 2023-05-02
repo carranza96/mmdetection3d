@@ -206,11 +206,11 @@ class WaymoMetric(KittiMetric):
         import subprocess
 
         if metric == 'mAP':
-            eval_str = 'mmdet3d/evaluation/functional/waymo_utils/' + \
-                f'compute_detection_metrics_main {pklfile_prefix}.bin ' + \
-                f'{self.waymo_bin_file}'
-            print(eval_str)
-            ret_bytes = subprocess.check_output(eval_str, shell=True)
+            eval_str = ['mmdet3d/evaluation/functional/waymo_utils/compute_detection_metrics_main', 
+                        f'{pklfile_prefix}.bin', 
+                        f'{self.waymo_bin_file}']
+            print(" ".join(eval_str))
+            ret_bytes = subprocess.check_output(eval_str, timeout=7200)
             ret_texts = ret_bytes.decode('utf-8')
             print_log(ret_texts, logger=logger)
 
