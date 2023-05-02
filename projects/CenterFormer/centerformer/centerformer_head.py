@@ -21,6 +21,7 @@ from mmdet3d.models.layers import circle_nms, nms_bev
 from mmdet3d.registry import MODELS
 from .bbox_ops import nms_iou3d
 from .losses import FastFocalLoss
+from mmdet3d.structures import xywhr2xyxyr
 
 
 class SepHead(nn.Module):
@@ -294,6 +295,8 @@ class CenterFormerBboxHead(nn.Module):
 
         Additionally support double flip testing
         """
+        if batch_input_metas[0]['lidar_path']=='/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/training/velodyne/1084000.bin':
+            print()
         rets = []
 
         post_center_range = self.test_cfg.post_center_limit_range
@@ -473,13 +476,18 @@ class CenterFormerBboxHead(nn.Module):
                 if len(selected) > 0:
                     selected = torch.cat(selected, dim=0)
             else:
-                selected = nms_bev(
-                    boxes_for_nms.float(),
-                    scores.float(),
-                    thresh=test_cfg.nms.nms_iou_threshold,
-                    pre_max_size=test_cfg.nms.nms_pre_max_size,
-                    post_max_size=test_cfg.nms.nms_post_max_size,
-                )
+                boxes_for_nms = xywhr2xyxyr(img_metas[i]['box_type_3d'](
+                    box_preds[:, :], self.bbox_code_size).bev)
+                if boxes_for_nms.shape[0] != 0:
+                    selected = nms_bev(
+                        boxes_for_nms.float(),
+                        scores.float(),
+                        thresh=test_cfg.nms.nms_iou_threshold,
+                        pre_max_size=test_cfg.nms.nms_pre_max_size,
+                        post_max_size=test_cfg.nms.nms_post_max_size,
+                    )
+                else:
+                    selected = []
 
             selected_boxes = box_preds[selected]
             selected_scores = scores[selected]
