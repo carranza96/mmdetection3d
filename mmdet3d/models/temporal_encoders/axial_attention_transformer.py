@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from operator import itemgetter
 
-from mmcv.runner import BaseModule
+from mmengine.model import BaseModule
 from mmdet3d.registry import MODELS
 
 # Helper functions
