@@ -403,7 +403,13 @@ class LoadPointsFromMultiSweeps(BaseTransform):
                 # bc-breaking: Timestamp has divided 1e6 in pkl infos.
                 sweep_ts = sweep['timestamp']
                 
-                if 'ego2global' in sweep:
+                if 'lidar2sensor' in sweep['lidar_points']:
+                    lidar2sensor = np.array(sweep['lidar_points']['lidar2sensor'])
+                    points_sweep[:, :
+                                3] = points_sweep[:, :3] @ lidar2sensor[:3, :3]
+                    points_sweep[:, :3] -= lidar2sensor[:3, 3]
+                    points_sweep[:, -1] = ts - sweep_ts
+                else:
                     curr_pose = results['ego2global']
                     past_pose = sweep['ego2global']
                     past2world_rot = past_pose[0:3, 0:3]
@@ -416,12 +422,6 @@ class LoadPointsFromMultiSweeps(BaseTransform):
                     past_pc_in_curr = np.einsum('ij,nj->ni', world2curr_rot, past_pc_in_world) + world2curr_trans[None, :]
                     points_sweep[:, :3] = past_pc_in_curr
                     points_sweep[:, -1] = (ts - sweep_ts)/1e6
-                else:
-                    lidar2sensor = np.array(sweep['lidar_points']['lidar2sensor'])
-                    points_sweep[:, :
-                                3] = points_sweep[:, :3] @ lidar2sensor[:3, :3]
-                    points_sweep[:, :3] -= lidar2sensor[:3, 3]
-                    points_sweep[:, -1] = ts - sweep_ts
                     
                 points_sweep = points.new_point(points_sweep)
                 sweep_points_list.append(points_sweep)
