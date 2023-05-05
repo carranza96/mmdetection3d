@@ -7,6 +7,9 @@ _base_ = [
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
 point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+# Using calibration info convert the Lidar-coordinate point cloud range to the
+# ego-coordinate point cloud range could bring a little promotion in nuScenes.
+# point_cloud_range = [-51.2, -52, -5.0, 51.2, 50.4, 3.0]
 # For nuScenes we usually do 10-class detection
 class_names = [
     'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier',
@@ -18,6 +21,14 @@ model = dict(
         voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False)),
     pts_voxel_encoder=dict(point_cloud_range=point_cloud_range),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
+    pts_temporal_encoder=dict(type='AxialAttentionTransformer',
+            dim = 384,
+            num_dimensions = 3,
+            depth = 1,
+            heads = 8,
+            dim_index = 2,
+            axial_pos_emb_shape = (3, 128, 128),
+            fc_layer_attn=False),
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -65,12 +76,13 @@ train_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=5, use_dim=5),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=9,
+        sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         pad_empty_sweeps=True,
-        remove_close=True),
+        remove_close=True,
+        test_mode=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    # dict(type='ObjectSample', db_sampler=db_sampler),
+    dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.3925, 0.3925],
@@ -93,10 +105,11 @@ test_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=5, use_dim=5),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=9,
+        sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         pad_empty_sweeps=True,
-        remove_close=True),
+        remove_close=True,
+        test_mode=True),
     dict(
         type='MultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -120,23 +133,22 @@ train_dataloader = dict(
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
-        # type='CBGSDataset',
-        # dataset=dict(
+        type='CBGSDataset',
+        dataset=dict(
             type=dataset_type,
             data_root=data_root,
             ann_file='nuscenes_infos_train.pkl',
             pipeline=train_pipeline,
-            metainfo=dict(CLASSES=class_names),
+            metainfo=dict(classes=class_names),
             test_mode=False,
             data_prefix=data_prefix,
             use_valid_flag=True,
             # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
             # and box_type_3d='Depth' in sunrgbd and scannet dataset.
-            box_type_3d='LiDAR'))#)
+            box_type_3d='LiDAR')))
 test_dataloader = dict(
-    dataset=dict(pipeline=test_pipeline, metainfo=dict(CLASSES=class_names)))
+    dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 val_dataloader = dict(
-    dataset=dict(pipeline=test_pipeline, metainfo=dict(CLASSES=class_names)))
+    dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 
-
-train_cfg = dict(max_epochs=20, val_interval=1)
+train_cfg = dict(val_interval=1)
