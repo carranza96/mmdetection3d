@@ -310,7 +310,7 @@ class MVXTwoStageDetector(Base3DDetector):
         pts_feats_list = []
         for pts in pts_list:
             img_feats = self.extract_img_feat(imgs, batch_input_metas)
-            voxel_dict_chunk = self.data_preprocessor.voxelize(pts) # TODO: Avoid recalculate
+            voxel_dict_chunk = self.data_preprocessor.voxelize(pts, None) # TODO: Avoid recalculate
             pts_feats = self.extract_pts_feat(
                 voxel_dict_chunk,
                 points=pts,
