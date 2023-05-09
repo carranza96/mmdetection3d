@@ -122,7 +122,7 @@ model = dict(
 #  '../_base_/datasets/waymoD5-3d-3class.py'
 dataset_type = 'WaymoDataset'
 data_root = 'data/waymo/kitti_format/'
-# data_root = '/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/'
+# data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
 file_client_args = dict(backend='disk')
@@ -150,7 +150,7 @@ train_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=6, use_dim=6, norm_intensity=True),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=2,
+        sweeps_num=1,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5],
         pad_empty_sweeps=True,
@@ -189,7 +189,7 @@ test_pipeline = [
         file_client_args=file_client_args),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=2,
+        sweeps_num=1,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5],
         pad_empty_sweeps=True,

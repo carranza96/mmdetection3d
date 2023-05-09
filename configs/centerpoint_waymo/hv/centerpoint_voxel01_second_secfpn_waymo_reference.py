@@ -45,7 +45,7 @@ model = dict(
         in_channels=256,
         layer_nums=[5, 5], # Official CenterPointRepo (NUS CP-Voxel is same, in Waymo PointPillars is [3,5,5], in CenterFormer [5,5,1?])
         layer_strides=[1, 2], # Official CenterPointRepo (NUS CP-Voxel is same, in Waymo PointPillars is [1,2,2], in CenterFormer is also [1,2])
-        out_channels=[256, 256], # Official CenterPointRepo (NUS CP-Voxel is same, in Waymo PointPillars is [64, 128, 256], in CenterFormer is [256,256])
+        out_channels=[128, 256], # Official CenterPointRepo (NUS CP-Voxel is same, in Waymo PointPillars is [64, 128, 256], in CenterFormer is [256,256])
         norm_cfg=dict(type='SyncBN', eps=1e-3, momentum=0.01), 
         conv_cfg=dict(type='Conv2d', bias=False)
     ),
@@ -53,16 +53,16 @@ model = dict(
     # TODO: Change BEV map size
     pts_neck=dict(
         type='SECONDFPN',
-        in_channels=[256, 256], # (in CenterFormer is [256,256])
-        out_channels=[128, 128], # (in CenterFormer is [128,128])
-        upsample_strides=[2, 4], # (in CenterFormer is [2,4])
+        in_channels=[128, 256], # (in CenterFormer is [256,256])
+        out_channels=[256, 256], # (in CenterFormer is [128,128])
+        upsample_strides=[1, 2], # (in CenterFormer is [2,4])
         norm_cfg=dict(type='SyncBN', eps=1e-3, momentum=0.01), 
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True),
     
     pts_bbox_head=dict(
         type='CenterHead',
-        in_channels=sum([128, 128]),  # (in CenterFormer is 256)
+        in_channels=sum([256, 256]),  # (in CenterFormer is 256)
         tasks = [dict(num_class=3, class_names=['Car', 'Pedestrian', 'Cyclist'])], # https://github.com/tianweiy/CenterPoint/issues/130 (works similarly as dividing into three tasks)
         common_heads=dict(
             reg=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2)), # Centerformer includes  'iou': (1, 2)
@@ -73,7 +73,7 @@ model = dict(
             max_num=500, # TODO: in Centerformer paper is 1000 in testing, but here in CenterFormer MMDetection is 500
             score_threshold=0.1,
             pc_range=[-75.2, -75.2],
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             voxel_size=voxel_size[:2],
             code_size=7),
         separate_head=dict(
@@ -91,7 +91,7 @@ model = dict(
         pts=dict(
             grid_size=[1504, 1504, 40],
             voxel_size=voxel_size,
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             dense_reg=1,
             gaussian_overlap=0.1,
             point_cloud_range=point_cloud_range,
@@ -110,7 +110,7 @@ model = dict(
             min_radius=[4, 12, 10, 1, 0.85, 0.175],
             score_threshold=0.1,
             pc_range=[-75.2, -75.2],
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             voxel_size=voxel_size[:2],
             nms_type='rotate',
             pre_max_size=4096,
@@ -122,7 +122,7 @@ model = dict(
 #  '../_base_/datasets/waymoD5-3d-3class.py'
 dataset_type = 'WaymoDataset'
 data_root = 'data/waymo/kitti_format/'
-# data_root = '/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/'
+# data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
 file_client_args = dict(backend='disk')

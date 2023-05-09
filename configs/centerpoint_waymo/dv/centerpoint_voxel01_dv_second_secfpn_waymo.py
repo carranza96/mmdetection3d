@@ -18,16 +18,16 @@ model = dict(
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         voxel=True,
-        # TODO: Dynamic/non-deterministic voxelization (in Centerformer is Dynamic)
+        voxel_type='dynamic',
         voxel_layer=dict(
-            max_num_points=5, # As in Official CenterPointRepo (in Waymo PointPillars is 20, in NUS CP-Voxel is 10)
-            voxel_size=voxel_size,
+            max_num_points=-1,
             point_cloud_range=point_cloud_range,
-            max_voxels=(150000, 150000))), # As in Official CenterPointRepo (in NUS CP-Voxel is (32000,32000))
+            voxel_size=voxel_size,
+            max_voxels=(-1, -1))),
     pts_voxel_encoder=dict(
-        type='HardSimpleVFE', # in CenterFormer is DynamicSimpleVFE
-        num_features=5
-        ),
+        type='DynamicSimpleVFE',
+        point_cloud_range=point_cloud_range,
+        voxel_size=voxel_size),
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=5,
@@ -121,8 +121,8 @@ model = dict(
 
 #  '../_base_/datasets/waymoD5-3d-3class.py'
 dataset_type = 'WaymoDataset'
-data_root = 'data/waymo/kitti_format/'
-# data_root = '/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/'
+# data_root = 'data/waymo/kitti_format/'
+data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
 file_client_args = dict(backend='disk')

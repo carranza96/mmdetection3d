@@ -217,12 +217,20 @@ class MVXTwoStageDetector(Base3DDetector):
         """
         if not self.with_pts_bbox:
             return None
-        voxel_features = self.pts_voxel_encoder(voxel_dict['voxels'],
-                                                voxel_dict['num_points'],
-                                                voxel_dict['coors'], img_feats,
-                                                batch_input_metas)
+        
+        if self.data_preprocessor.voxel_type == 'hard':
+            voxel_features = self.pts_voxel_encoder(voxel_dict['voxels'],
+                                                    voxel_dict['num_points'],
+                                                    voxel_dict['coors'], img_feats,
+                                                    batch_input_metas)
+            feature_coors = voxel_dict['coors']
+        
+        else:
+            voxel_features, feature_coors = self.pts_voxel_encoder(
+            voxel_dict['voxels'], voxel_dict['coors'])
+        
         batch_size = voxel_dict['coors'][-1, 0] + 1
-        x = self.pts_middle_encoder(voxel_features, voxel_dict['coors'],
+        x = self.pts_middle_encoder(voxel_features, feature_coors,
                                     batch_size)
         x = self.pts_backbone(x)
         if self.with_pts_neck:
@@ -278,46 +286,43 @@ class MVXTwoStageDetector(Base3DDetector):
         imgs = batch_inputs_dict.get('imgs', None)
         points = batch_inputs_dict.get('points', None)
 
-        pcs0, pcs1, pcs2 = [], [], []
         # Chunk sweeps in three groups for each sample within the batch
+        chunks = 3
+        pts_list = [[] for _ in range(chunks)]
         for res in points:
             ts = res[:,-1].unique()
-
-            if len(ts)==1:  # If there are no previous sweeps, the three timesteps are the current point cloud
-                pcs0.append(res)
-                pcs1.append(res)
-                pcs2.append(res)
-            
-            else:
-                ts_pc0, ts_pc1, ts_pc2 = ts[-4:], ts[-7:-4], ts[:-7]
-                pc0_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc0])
-                pc1_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc1])
-                pc2_ind = torch.cat([torch.where(res[:,-1]==t)[0] for t in ts_pc2])
-
-                pc0, pc1, pc2 = res[pc0_ind],  res[pc1_ind],  res[pc2_ind]
-
-                pcs0.append(pc0)
-                pcs1.append(pc1)
-                pcs2.append(pc2)
-
-        ## TODO: Fix this
-        img_feats, pts_feats = self.extract_feat(batch_inputs_dict0, batch_input_metas0)
-        img_feats1, pts_feats1 = self.extract_feat(batch_inputs_dict1, batch_input_metas1)
-        img_feats2, pts_feats2 = self.extract_feat(batch_inputs_dict2, batch_input_metas2)
+            # ts_r = res[:,-1].round(decimals=2).unique()  
+            chunk_split = 0.5/chunks
+            for i in range(chunks):
+                # If there are no previous sweeps, the three timesteps are the current point cloud
+                if len(ts)==1:
+                    pc = res
+                    pts_list[i].append(pc)
+                else:
+                    ts_lb, ts_ub = chunk_split*(i), chunk_split*(i+1) if i<chunks-1 else 1.
+                    pc = res[(res[:,-1]>=ts_lb) & (res[:,-1]<=ts_ub)]
+                    ts = pc[:,-1].round(decimals=2).unique()
+                    # print(ts)
+                    pts_list[i].append(pc)
+        
+        pts_list.reverse() # Oldest points are first in the temporal sequence: PC0: [0.3495, 0.3998, 0.4495, 0.4993], PC1: [0.1996, 0.2499, 0.2997], PC2: [0.0000, 0.0497, 0.1001, 0.1495]
+        
+        pts_feats_list = []
+        for pts in pts_list:
+            img_feats = self.extract_img_feat(imgs, batch_input_metas)
+            voxel_dict_chunk = self.data_preprocessor.voxelize(pts) # TODO: Avoid recalculate
+            pts_feats = self.extract_pts_feat(
+                voxel_dict_chunk,
+                points=pts,
+                img_feats=img_feats,
+                batch_input_metas=batch_input_metas)
+            pts_feats_list.append(pts_feats[0])
 
         # Create 5-D Tensor (b, t, c, h, w)
-        temp_input = torch.stack((pts_feats0[0], pts_feats1[0], pts_feats2[0])).transpose(0,1)
+        temp_input = torch.stack(pts_feats_list).transpose(0,1)
         pts_feats = [self.pts_temporal_encoder(temp_input)[:, -1]]
-        img_feats = None
 
-        # img_feats = self.extract_img_feat(imgs, batch_input_metas)
-        # pts_feats = self.extract_pts_feat(
-        #     voxel_dict,
-        #     points=points,
-        #     img_feats=img_feats,
-        #     batch_input_metas=batch_input_metas)
-
-        return (img_feats, pts_feats)
+        return img_feats, pts_feats
 
     def loss(self, batch_inputs_dict: Dict[List, torch.Tensor],
              batch_data_samples: List[Det3DDataSample],

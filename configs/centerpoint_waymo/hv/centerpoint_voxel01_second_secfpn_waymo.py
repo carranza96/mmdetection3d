@@ -55,7 +55,7 @@ model = dict(
         type='SECONDFPN',
         in_channels=[128, 256], # (in CenterFormer is [256,256])
         out_channels=[256, 256], # (in CenterFormer is [128,128])
-        upsample_strides=[2, 4], # (in CenterFormer is [2,4])
+        upsample_strides=[1, 2], # (in CenterFormer is [2,4])
         norm_cfg=dict(type='SyncBN', eps=1e-3, momentum=0.01), 
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True),
@@ -73,7 +73,7 @@ model = dict(
             max_num=500, # TODO: in Centerformer paper is 1000 in testing, but here in CenterFormer MMDetection is 500
             score_threshold=0.1,
             pc_range=[-75.2, -75.2],
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             voxel_size=voxel_size[:2],
             code_size=7),
         separate_head=dict(
@@ -91,7 +91,7 @@ model = dict(
         pts=dict(
             grid_size=[1504, 1504, 40],
             voxel_size=voxel_size,
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             dense_reg=1,
             gaussian_overlap=0.1,
             point_cloud_range=point_cloud_range,
@@ -110,7 +110,7 @@ model = dict(
             min_radius=[4, 12, 10, 1, 0.85, 0.175],
             score_threshold=0.1,
             pc_range=[-75.2, -75.2],
-            out_size_factor=4, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
+            out_size_factor=8, # TODO: (in NUS CP-Voxel is 8, in Centerformer is 4)
             voxel_size=voxel_size[:2],
             nms_type='rotate',
             pre_max_size=4096,
@@ -121,8 +121,8 @@ model = dict(
 
 #  '../_base_/datasets/waymoD5-3d-3class.py'
 dataset_type = 'WaymoDataset'
-data_root = 'data/waymo/kitti_format/'
-# data_root = '/mnt/hd/mmdetection3d/data/waymo_test/kitti_format/'
+# data_root = 'data/waymo/kitti_format/'
+data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
 file_client_args = dict(backend='disk')

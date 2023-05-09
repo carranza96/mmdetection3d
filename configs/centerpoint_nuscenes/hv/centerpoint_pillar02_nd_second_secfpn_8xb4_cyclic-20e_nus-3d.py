@@ -121,7 +121,7 @@ test_pipeline = [
 train_dataloader = dict(
     _delete_=True,
     batch_size=4,
-    num_workers=4,
+    num_workers=8, # To speed-up data_time in training
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
@@ -139,8 +139,11 @@ train_dataloader = dict(
             # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='LiDAR')))
 test_dataloader = dict(
+    num_workers=4, # To speed-up data_time in inference
     dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 val_dataloader = dict(
+    num_workers=4,
     dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 
 train_cfg = dict(val_interval=1)
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))

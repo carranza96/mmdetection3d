@@ -20,15 +20,6 @@ model = dict(
     data_preprocessor=dict(
         voxel_layer=dict(point_cloud_range=point_cloud_range, deterministic=False)),
     pts_bbox_head=dict(bbox_coder=dict(pc_range=point_cloud_range[:2])),
-    pts_temporal_encoder=dict(type='ConvLSTM',
-        input_size = (128, 128),
-        input_dim = 384,
-        hidden_dim = 384,
-        kernel_size = (1, 1),
-        num_layers = 1,
-        batch_first = True,
-        bias = False,
-        return_all_layers = False),
     # model training and testing settings
     train_cfg=dict(pts=dict(point_cloud_range=point_cloud_range)),
     test_cfg=dict(pts=dict(pc_range=point_cloud_range[:2])))
@@ -131,7 +122,7 @@ test_pipeline = [
 train_dataloader = dict(
     _delete_=True,
     batch_size=4,
-    num_workers=4,
+    num_workers=8, # To speed-up data_time in training
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
@@ -149,8 +140,11 @@ train_dataloader = dict(
             # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='LiDAR')))
 test_dataloader = dict(
+    num_workers=4, # To speed-up data_time in inference
     dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 val_dataloader = dict(
+    num_workers=4,
     dataset=dict(pipeline=test_pipeline, metainfo=dict(classes=class_names)))
 
 train_cfg = dict(val_interval=1)
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
