@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/schedules/cyclic-20e.py', '../_base_/default_runtime.py'
+    '../../_base_/schedules/cyclic-20e.py', '../../_base_/default_runtime.py'
 ]
 
 voxel_size = [0.32, 0.32, 6]

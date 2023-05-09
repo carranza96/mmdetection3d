@@ -1,7 +1,7 @@
 _base_ = [
-    '../_base_/datasets/nus-3d.py',
-    '../_base_/models/centerpoint_pillar02_second_secfpn_nus.py',
-    '../_base_/schedules/cyclic-20e.py', '../_base_/default_runtime.py'
+    '../../_base_/datasets/nus-3d.py',
+    '../../_base_/models/centerpoint_pillar02_second_secfpn_nus.py',
+    '../../_base_/schedules/cyclic-20e.py', '../../_base_/default_runtime.py'
 ]
 
 voxel_size = [0.2, 0.2, 8]

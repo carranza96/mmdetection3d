@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/schedules/cyclic-20e.py', '../_base_/default_runtime.py'
+    '../../_base_/schedules/cyclic-20e.py', '../../_base_/default_runtime.py'
 ]
 # TODO: Check optimizer params (compare with CenterFormer)
 
