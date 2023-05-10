@@ -44,7 +44,6 @@ model = dict(
 
 dataset_type = 'NuScenesDataset'
 data_root = 'data/nuscenes/'
-file_client_args = dict(backend='disk')
 
 db_sampler = dict(
     data_root=data_root,

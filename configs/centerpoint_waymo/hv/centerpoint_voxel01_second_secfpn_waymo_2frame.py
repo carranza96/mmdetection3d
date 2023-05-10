@@ -125,8 +125,6 @@ data_root = 'data/waymo/kitti_format/'
 # data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
-file_client_args = dict(backend='disk')
-
 
 db_sampler = dict(
     data_root=data_root,
@@ -185,8 +183,7 @@ test_pipeline = [
         coord_type='LIDAR',
         load_dim=6,
         use_dim=6,
-        norm_intensity=True,
-        file_client_args=file_client_args),
+        norm_intensity=True),
     dict(
         type='LoadPointsFromMultiSweeps',
         sweeps_num=1,
@@ -235,8 +232,7 @@ train_dataloader = dict(
         # and box_type_3d='Depth' in sunrgbd and scannet dataset.
         box_type_3d='LiDAR',
         # load one frame every five frames
-        load_interval=5,
-        file_client_args=file_client_args))
+        load_interval=5))
 val_dataloader = dict(
     batch_size=1,
     num_workers=1,
@@ -252,8 +248,7 @@ val_dataloader = dict(
         modality=input_modality,
         test_mode=True,
         metainfo=metainfo,
-        box_type_3d='LiDAR',
-        file_client_args=file_client_args))
+        box_type_3d='LiDAR'))
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
@@ -261,7 +256,6 @@ val_evaluator = dict(
     ann_file= data_root + 'waymo_infos_val.pkl',
     waymo_bin_file='./data/waymo/waymo_format/gt.bin',
     data_root='./data/waymo/waymo_format',
-    file_client_args=file_client_args,
     convert_kitti_format=False,
     idx2metainfo='./data/waymo/waymo_format/idx2metainfo.pkl')
 test_evaluator = val_evaluator
