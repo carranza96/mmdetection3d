@@ -217,7 +217,7 @@ train_dataloader = dict(
         load_interval=5))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=1,
+    num_workers=8,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -256,6 +256,9 @@ default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=-1))
 # custom_hooks = [dict(type='DisableObjectSampleHook', disable_after_epoch=15)] # NEW: Fade augmentation strategy. The model can adjust to the real data distribution at the end of the training
 
 # fp16 = dict(loss_scale=32.)
+
+
+env_cfg = dict(dist_cfg=dict(timeout=7200))
 
 
 # Notes CenterFormer
