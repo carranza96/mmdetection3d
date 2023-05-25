@@ -30,7 +30,7 @@ model = dict(
         ),
     pts_middle_encoder=dict(
         type='SparseEncoder',
-        in_channels=5,
+        in_channels=6,
         sparse_shape=[41, 1504, 1504],
         output_channels=128,
         order=('conv', 'norm', 'act'),

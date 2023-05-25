@@ -18,16 +18,16 @@ model = dict(
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         voxel=True,
-        # TODO: Dynamic/non-deterministic voxelization (in Centerformer is Dynamic)
+        voxel_type='dynamic',
         voxel_layer=dict(
-            max_num_points=5, # As in Official CenterPointRepo (in Waymo PointPillars is 20, in NUS CP-Voxel is 10)
-            voxel_size=voxel_size,
+            max_num_points=-1,
             point_cloud_range=point_cloud_range,
-            max_voxels=(150000, 150000))), # As in Official CenterPointRepo (in NUS CP-Voxel is (32000,32000))
+            voxel_size=voxel_size,
+            max_voxels=(-1, -1))),
     pts_voxel_encoder=dict(
-        type='HardSimpleVFE', # in CenterFormer is DynamicSimpleVFE
-        num_features=5
-        ),
+        type='DynamicSimpleVFE',
+        point_cloud_range=point_cloud_range,
+        voxel_size=voxel_size),
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=6,
@@ -60,6 +60,15 @@ model = dict(
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True),
     
+    pts_temporal_encoder=dict(type='ConvLSTM',
+        input_size = (188, 188),
+        input_dim = 512,
+        hidden_dim = 512,
+        kernel_size = (1, 1),
+        num_layers = 1,
+        batch_first = True,
+        bias = False,
+        return_all_layers = False),
     pts_bbox_head=dict(
         type='CenterHead',
         in_channels=sum([256, 256]),  # (in CenterFormer is 256)
@@ -122,7 +131,7 @@ model = dict(
 #  '../_base_/datasets/waymoD5-3d-3class.py'
 dataset_type = 'WaymoDataset'
 data_root = 'data/waymo/kitti_format/'
-# data_root = '/mnt/hd/mmdetection3d/data/waymo/kitti_format/'
+# data_root = '/mnt/hd/mmdetection3d/data/waymo10/kitti_format/'
 metainfo = dict(classes=class_names)
 input_modality = dict(use_lidar=True, use_camera=False)
 
@@ -148,7 +157,7 @@ train_pipeline = [
     dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=6, use_dim=6, norm_intensity=True),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=3,
+        sweeps_num=2,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5],
         pad_empty_sweeps=True,
@@ -186,7 +195,7 @@ test_pipeline = [
         norm_intensity=True),
     dict(
         type='LoadPointsFromMultiSweeps',
-        sweeps_num=3,
+        sweeps_num=2,
         load_dim=6,
         use_dim=[0, 1, 2, 3, 4, 5],
         pad_empty_sweeps=True,
@@ -235,7 +244,24 @@ train_dataloader = dict(
         load_interval=5))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=1,
+    num_workers=8,
+    persistent_workers=True,
+    drop_last=False,
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    dataset=dict(
+        type=dataset_type,
+        data_root='/mnt/hd/mmdetection3d/data/waymo/kitti_format/',
+        data_prefix=dict(pts='training/velodyne', sweeps='training/velodyne'),
+        ann_file='waymo_infos_val.pkl',
+        pipeline=test_pipeline,
+        modality=input_modality,
+        test_mode=True,
+        metainfo=metainfo,
+        box_type_3d='LiDAR'))
+
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=8,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -249,16 +275,22 @@ val_dataloader = dict(
         test_mode=True,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
-test_dataloader = val_dataloader
 
 val_evaluator = dict(
+    type='WaymoMetric',
+    ann_file= '/mnt/hd/mmdetection3d/data/waymo/kitti_format/waymo_infos_val.pkl',
+    waymo_bin_file='/mnt/hd/mmdetection3d/data/waymo/waymo_format/gt.bin',
+    data_root='./data/waymo/waymo_format',
+    convert_kitti_format=False,
+    idx2metainfo='./data/waymo/waymo_format/idx2metainfo.pkl')
+
+test_evaluator = dict(
     type='WaymoMetric',
     ann_file= data_root + 'waymo_infos_val.pkl',
     waymo_bin_file='./data/waymo/waymo_format/gt.bin',
     data_root='./data/waymo/waymo_format',
     convert_kitti_format=False,
     idx2metainfo='./data/waymo/waymo_format/idx2metainfo.pkl')
-test_evaluator = val_evaluator
 
 vis_backends = [dict(type='LocalVisBackend')]
 visualizer = dict(
@@ -266,14 +298,17 @@ visualizer = dict(
 
 
 # '../_base_/schedules/cyclic-20e.py'
-train_cfg = dict(val_interval=20)
+train_cfg = dict(val_interval=1)
 
 
-default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=-1))
 # TODO: Centerformes disables ObjectSample
 # custom_hooks = [dict(type='DisableObjectSampleHook', disable_after_epoch=15)] # NEW: Fade augmentation strategy. The model can adjust to the real data distribution at the end of the training
 
 # fp16 = dict(loss_scale=32.)
+
+
+env_cfg = dict(dist_cfg=dict(timeout=7200))
 
 
 # Notes CenterFormer

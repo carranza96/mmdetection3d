@@ -223,6 +223,23 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type=dataset_type,
+        data_root='/mnt/hd/mmdetection3d/data/waymo/kitti_format/',
+        data_prefix=dict(pts='training/velodyne', sweeps='training/velodyne'),
+        ann_file='waymo_infos_val.pkl',
+        pipeline=test_pipeline,
+        modality=input_modality,
+        test_mode=True,
+        metainfo=metainfo,
+        box_type_3d='LiDAR'))
+
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=8,
+    persistent_workers=True,
+    drop_last=False,
+    sampler=dict(type='DefaultSampler', shuffle=False),
+    dataset=dict(
+        type=dataset_type,
         data_root=data_root,
         data_prefix=dict(pts='training/velodyne', sweeps='training/velodyne'),
         ann_file='waymo_infos_val.pkl',
@@ -231,16 +248,22 @@ val_dataloader = dict(
         test_mode=True,
         metainfo=metainfo,
         box_type_3d='LiDAR'))
-test_dataloader = val_dataloader
 
 val_evaluator = dict(
+    type='WaymoMetric',
+    ann_file= '/mnt/hd/mmdetection3d/data/waymo/kitti_format/waymo_infos_val.pkl',
+    waymo_bin_file='/mnt/hd/mmdetection3d/data/waymo/waymo_format/gt.bin',
+    data_root='./data/waymo/waymo_format',
+    convert_kitti_format=False,
+    idx2metainfo='./data/waymo/waymo_format/idx2metainfo.pkl')
+
+test_evaluator = dict(
     type='WaymoMetric',
     ann_file= data_root + 'waymo_infos_val.pkl',
     waymo_bin_file='./data/waymo/waymo_format/gt.bin',
     data_root='./data/waymo/waymo_format',
     convert_kitti_format=False,
     idx2metainfo='./data/waymo/waymo_format/idx2metainfo.pkl')
-test_evaluator = val_evaluator
 
 vis_backends = [dict(type='LocalVisBackend')]
 visualizer = dict(
@@ -248,7 +271,7 @@ visualizer = dict(
 
 
 # '../_base_/schedules/cyclic-20e.py'
-train_cfg = dict(val_interval=5)
+train_cfg = dict(val_interval=1)
 
 
 default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=-1))
