@@ -51,6 +51,7 @@ def _load_from_state_dict(self, state_dict: OrderedDict, prefix: str,
     while those in spcon2.x is in (out_channel,D,H,W,in_channel).
     """
     version = local_metadata.get('version', None)
+    version = 2
     for hook in self._load_state_dict_pre_hooks.values():
         hook(state_dict, prefix, local_metadata, strict, missing_keys,
              unexpected_keys, error_msgs)

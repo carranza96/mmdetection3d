@@ -438,6 +438,9 @@ class ObjectSample(BaseTransform):
                 np.concatenate([gt_bboxes_3d.numpy(), sampled_gt_bboxes_3d]))
 
             points = self.remove_points_in_boxes(points, sampled_gt_bboxes_3d)
+            # Timestamp Waymo
+            if(sampled_points.shape[1]==6):
+                sampled_points.tensor[:, -1] = 0
             # check the points dimension
             points = points.cat([sampled_points, points])
 

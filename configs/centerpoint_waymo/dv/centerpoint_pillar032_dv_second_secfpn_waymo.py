@@ -194,7 +194,7 @@ train_dataloader = dict(
         load_interval=5))
 val_dataloader = dict(
     batch_size=1,
-    num_workers=1,
+    num_workers=8,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -225,7 +225,8 @@ visualizer = dict(
 
 
 # '../_base_/schedules/cyclic-20e.py'
-train_cfg = dict(val_interval=20)
+train_cfg = dict(val_interval=5)
 
 
-default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=-1))
+env_cfg = dict(dist_cfg=dict(timeout=7200))
